@@ -71,7 +71,30 @@ const vnd=n=>n?new Intl.NumberFormat('vi-VN').format(n)+' triệu VND':'Liên h�
 const brandTrack=document.getElementById('brand-track');
 brands.forEach(b=>{const el=document.createElement('button');el.className='watch-card brand-card';el.innerHTML=`<span class="card-label">THU MUA</span><img src="${b.image}" alt="${b.name}" loading="lazy"><h3>${b.name}</h3><p>${b.copy}</p><small>${b.count} →</small>`;el.onclick=()=>showBrand(b);brandTrack.appendChild(el)});
 const saleTrack=document.getElementById('sale-track');
-saleItems.forEach(p=>{const el=document.createElement('button');el.className='watch-card sale-card';el.innerHTML=`<span class="stock-tag">${p.type}</span><img src="${p.image}" alt="${p.name}" loading="lazy"><h3>${p.name}</h3><p>Ref. ${p.ref} · ${p.condition}</p><strong>${vnd(p.price)}</strong>`;el.onclick=()=>openDialog(p,'sale');saleTrack.appendChild(el)});
+saleItems.forEach((product) => {
+  const card = document.createElement("button");
+
+  card.className = "watch-card sale-card";
+
+  card.innerHTML = `
+    <span class="stock-tag">HÀNG CÓ SẴN</span>
+    <img
+      src="${product.image}"
+      alt="${product.name}"
+      loading="lazy"
+    >
+    <h3>${product.name}</h3>
+    <p>Reference: ${product.ref} · ${product.condition}</p>
+    <strong>${vnd(product.price)}</strong>
+  `;
+
+  card.addEventListener("click", () => {
+    window.location.href =
+      `product.html#${encodeURIComponent(product.ref)}`;
+  });
+
+  saleTrack.appendChild(card);
+});
 function showBrand(b){document.getElementById('buy').hidden=true;const area=document.getElementById('brand-models');area.hidden=false;document.getElementById('brand-name').textContent=b.name;const track=document.getElementById('model-track');track.innerHTML='';buyModels[b.slug].forEach(p=>{const el=document.createElement('button');el.className='watch-card';el.innerHTML=`<img src="${p.image}" alt="${p.name}"><h3>${p.name}</h3><p>Reference: ${p.ref}</p><div class="two-prices"><span>Hàng mới <b>${p.n?'~'+vnd(p.n):'Liên hệ'}</b></span><span>Hàng đã dùng <b>${p.u?'~'+vnd(p.u):'Liên hệ'}</b></span></div>`;el.onclick=()=>openDialog(p,'buy');track.appendChild(el)});area.scrollIntoView({behavior:'smooth'})}
 document.getElementById('brand-back').onclick=()=>{document.getElementById('brand-models').hidden=true;document.getElementById('buy').hidden=false;document.getElementById('buy').scrollIntoView({behavior:'smooth'})};
 document.querySelectorAll('.arrow').forEach(btn=>btn.onclick=()=>{const t=document.getElementById(btn.dataset.target);t.scrollBy({left:(btn.classList.contains('next')?1:-1)*Math.min(t.clientWidth*.82,420),behavior:'smooth'})});

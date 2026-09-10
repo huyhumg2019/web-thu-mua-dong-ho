@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Chi tiết sản phẩm — REWATCH</title>
+
+    <meta
+      name="description"
+      content="Thông tin chi tiết đồng hồ đang có sẵn tại REWATCH."
+    >
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@500&display=swap"
+      rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="product.css">
+  </head>
+
+  <body>
+    <header>
+      <a class="logo" href="index.html" aria-label="REWATCH trang chủ">
+        <strong>RE</strong>WATCH
+      </a>
+
+      <nav>
+        <a href="index.html#buy">Thu mua</a>
+        <a href="index.html#available">Hàng có sẵn</a>
+        <a href="index.html#consign">Bán hộ</a>
+        <a href="index.html#contact">Liên hệ</a>
+      </nav>
+
+      <button class="menu" aria-label="Mở menu">☰</button>
+    </header>
+
+    <main class="product-page">
+      <div class="product-heading">
+        <a href="index.html#available">← Quay lại hàng có sẵn</a>
+
+        <button class="save-product" type="button" aria-label="Lưu sản phẩm">
+          ♡ Lưu sản phẩm
+        </button>
+      </div>
+
+      <section class="product-layout">
+        <div class="product-gallery">
+          <div class="product-thumbnails" id="product-thumbnails"></div>
+
+          <div class="product-main-image">
+            <img id="product-image" src="" alt="">
+            <button id="zoom-image" type="button" aria-label="Phóng to ảnh">
+              ＋
+            </button>
+          </div>
+        </div>
+
+        <div class="product-information">
+          <p class="product-brand" id="product-brand"></p>
+
+          <h1 id="product-name">Đang tải sản phẩm...</h1>
+
+          <p class="product-reference" id="product-reference"></p>
+
+          <p class="product-price" id="product-price"></p>
+
+          <div class="product-status">
+            <span>Tình trạng</span>
+            <strong id="product-condition"></strong>
+          </div>
+
+          <div class="product-actions">
+            <a href="#product-contact" class="product-primary">
+              Liên hệ mua hàng
+            </a>
+
+            <div class="product-social">
+              <a href="#" id="zalo-link">Zalo</a>
+              <a href="#" id="line-link">LINE</a>
+              <a href="#" id="facebook-link">Facebook</a>
+            </div>
+          </div>
+
+          <p class="product-note">
+            Vui lòng liên hệ REWATCH để xác nhận sản phẩm, giá bán và phương
+            thức giao nhận.
+          </p>
+        </div>
+      </section>
+
+      <section class="product-details">
+        <h2>Thông tin sản phẩm</h2>
+
+        <div class="detail-grid">
+          <div>
+            <span>Thương hiệu</span>
+            <strong id="detail-brand"></strong>
+          </div>
+
+          <div>
+            <span>Reference</span>
+            <strong id="detail-reference"></strong>
+          </div>
+
+          <div>
+            <span>Năm sản xuất</span>
+            <strong id="detail-year"></strong>
+          </div>
+
+          <div>
+            <span>Tình trạng</span>
+            <strong id="detail-condition"></strong>
+          </div>
+
+          <div>
+            <span>Hộp</span>
+            <strong id="detail-box"></strong>
+          </div>
+
+          <div>
+            <span>Giấy tờ</span>
+            <strong id="detail-papers"></strong>
+          </div>
+        </div>
+
+        <div class="product-description">
+          <h2>Chi tiết</h2>
+          <p id="product-description"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer id="product-contact">
+      <a class="logo footer-logo" href="index.html">
+        <strong>RE</strong>WATCH
+      </a>
+
+      <div>
+        <span class="kicker">LIÊN HỆ NHANH</span>
+        <h2>Liên hệ để xác nhận sản phẩm.</h2>
+      </div>
+
+      <div class="contacts">
+        <a href="#">Zalo</a>
+        <a href="#">LINE</a>
+        <a href="#">Facebook</a>
+      </div>
+
+      <p>© 2026 REWATCH</p>
+    </footer>
+
+    <script src="product.js"></script>
+  </body>
+</html>
