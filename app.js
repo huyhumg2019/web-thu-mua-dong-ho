@@ -66,40 +66,46 @@ const saleTrack = document.getElementById("sale-track");
 saleTrack.innerHTML = `
   <p class="loading-products">Đang tải sản phẩm...</p>
 `;
-
-fetch("./data/products.csv")
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error("Không đọc được products.csv");
+supabasePublicClient
+  .from("products")
+  .select(`
+    id,
+    brand,
+    name,
+    reference,
+    sale_price_million_vnd,
+    condition,
+    status,
+    created_at,
+    product_images (
+      image_url,
+      display_order
+    )
+  `)
+  .eq("status", "available")
+  .order("created_at", { ascending: false })
+  .then(({ data, error }) => {
+    if (error) {
+      throw error;
     }
 
-    return response.text();
-  })
-  .then((csvText) => {
-    const lines = csvText
-      .replace(/^\uFEFF/, "")
-      .trim()
-      .split(/\r?\n/);
+    saleItems = data.map((product) => {
+      const sortedImages = [...product.product_images].sort(
+        (first, second) =>
+          first.display_order - second.display_order,
+      );
 
-    saleItems = lines
-      .slice(1)
-      .map((line) => {
-        const columns = line
-          .split(",")
-          .map((value) => value.trim());
-
-        return {
-          id: columns[0],
-          brand: columns[1],
-          name: columns[2],
-          ref: columns[3],
-          price: Number(columns[4]),
-          condition: columns[5],
-          image: columns[9],
-          status: columns[13],
-        };
-      })
-      .filter((product) => product.status === "available");
+      return {
+        id: product.id,
+        brand: product.brand,
+        name: product.name,
+        ref: product.reference,
+        price: Number(product.sale_price_million_vnd),
+        condition: product.condition,
+        image: sortedImages[0]?.image_url || "",
+        status: product.status,
+      };
+    });
 
     saleTrack.innerHTML = "";
 
