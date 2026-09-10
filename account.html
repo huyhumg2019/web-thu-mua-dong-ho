@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>Tài khoản khách hàng — REWATCH</title>
+
+  <meta
+    name="description"
+    content="Đăng nhập và theo dõi lịch sử giao dịch tại REWATCH."
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@500&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="account.css">
+</head>
+
+<body>
+  <header class="account-header">
+    <a class="account-logo" href="index.html">
+      <strong>RE</strong>WATCH
+    </a>
+
+    <a class="back-to-website" href="index.html">
+      ← Quay lại website
+    </a>
+  </header>
+
+  <main class="account-page">
+    <section id="customer-auth-panel">
+      <div class="account-intro">
+        <span class="account-kicker">
+          TÀI KHOẢN KHÁCH HÀNG
+        </span>
+
+        <h1>Theo dõi giao dịch<br>của bạn.</h1>
+
+        <p>
+          Đăng nhập để xem yêu cầu thu mua, đồng hồ
+          đã mua và sản phẩm đang ký gửi tại REWATCH.
+        </p>
+      </div>
+
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button
+            id="show-login-button"
+            class="active"
+            type="button"
+          >
+            Đăng nhập
+          </button>
+
+          <button
+            id="show-register-button"
+            type="button"
+          >
+            Tạo tài khoản
+          </button>
+        </div>
+
+        <form id="customer-login-form">
+          <label>
+            Email
+            <input
+              id="customer-login-email"
+              type="email"
+              autocomplete="email"
+              required
+            >
+          </label>
+
+          <label>
+            Mật khẩu
+            <input
+              id="customer-login-password"
+              type="password"
+              autocomplete="current-password"
+              required
+            >
+          </label>
+
+          <button class="account-primary" type="submit">
+            Đăng nhập
+          </button>
+        </form>
+
+        <form id="customer-register-form" hidden>
+          <label>
+            Họ và tên
+            <input
+              id="customer-register-name"
+              type="text"
+              autocomplete="name"
+              required
+            >
+          </label>
+
+          <label>
+            Email
+            <input
+              id="customer-register-email"
+              type="email"
+              autocomplete="email"
+              required
+            >
+          </label>
+
+          <label>
+            Mật khẩu
+            <input
+              id="customer-register-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </label>
+
+          <label>
+            Nhập lại mật khẩu
+            <input
+              id="customer-register-confirm-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </label>
+
+          <button class="account-primary" type="submit">
+            Tạo tài khoản
+          </button>
+        </form>
+
+        <p id="customer-auth-message" role="status"></p>
+      </div>
+    </section>
+
+    <section id="customer-dashboard" hidden>
+      <div class="customer-dashboard-heading">
+        <div>
+          <span class="account-kicker">
+            TÀI KHOẢN CỦA TÔI
+          </span>
+
+          <h1>Lịch sử giao dịch</h1>
+
+          <p id="customer-account-name"></p>
+        </div>
+
+        <div class="customer-account-actions">
+          <a href="index.html#buy">
+            Gửi yêu cầu thu mua
+          </a>
+
+          <button
+            id="customer-logout-button"
+            type="button"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+
+      <div class="customer-summary">
+        <article>
+          <span>Yêu cầu thu mua</span>
+          <strong id="request-total">0</strong>
+        </article>
+
+        <article>
+          <span>Đang xử lý</span>
+          <strong id="request-processing">0</strong>
+        </article>
+
+        <article>
+          <span>Đã hoàn tất</span>
+          <strong id="request-completed">0</strong>
+        </article>
+      </div>
+
+      <div class="customer-history">
+        <h2>Yêu cầu của bạn</h2>
+
+        <div class="customer-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã yêu cầu</th>
+                <th>Ngày gửi</th>
+                <th>Số đồng hồ</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+
+            <tbody id="customer-request-table-body"></tbody>
+          </table>
+        </div>
+
+        <p id="customer-dashboard-message" role="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>
