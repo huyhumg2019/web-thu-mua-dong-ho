@@ -424,7 +424,41 @@ document.getElementById("search-form").onsubmit = (event) => {
       "Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.";
   }
 };
-document.querySelector('.menu').onclick=()=>document.body.classList.toggle('menu-open');
+const menuButton = document.querySelector(".menu");
+const mainNavigation = document.querySelector("header nav");
+
+function closeMobileMenu() {
+  document.body.classList.remove("menu-open");
+  menuButton.setAttribute("aria-expanded", "false");
+}
+
+menuButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+
+  const isOpen =
+    document.body.classList.toggle("menu-open");
+
+  menuButton.setAttribute(
+    "aria-expanded",
+    String(isOpen),
+  );
+});
+
+mainNavigation
+  .querySelectorAll("a")
+  .forEach((link) => {
+    link.addEventListener("click", closeMobileMenu);
+  });
+
+document.addEventListener("click", (event) => {
+  if (
+    document.body.classList.contains("menu-open") &&
+    !mainNavigation.contains(event.target) &&
+    !menuButton.contains(event.target)
+  ) {
+    closeMobileMenu();
+  }
+});
 /* ===== BIỂU MẪU KHÁCH MUỐN BÁN ĐỒNG HỒ ===== */
 
 const sellRequestDialog = document.getElementById(
