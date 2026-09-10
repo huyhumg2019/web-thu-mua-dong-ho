@@ -102,6 +102,169 @@
         </div>
 
         <p id="admin-message" role="status"></p>
+        <section class="admin-products-section">
+  <div class="admin-section-heading">
+    <div>
+      <span class="kicker">HÀNG CÓ SẴN</span>
+      <h2>Quản lý sản phẩm</h2>
+    </div>
+
+    <button id="new-product-button" type="button">
+      Thêm sản phẩm mới
+    </button>
+  </div>
+
+  <form id="product-admin-form" hidden>
+    <input id="editing-product-id" type="hidden">
+
+    <div class="admin-form-grid">
+      <label>
+        Mã quản lý
+        <input
+          id="product-id-input"
+          type="text"
+          placeholder="Ví dụ: RW005"
+          required
+        >
+      </label>
+
+      <label>
+        Thương hiệu
+        <input
+          id="product-brand-input"
+          type="text"
+          placeholder="Ví dụ: Rolex"
+          required
+        >
+      </label>
+
+      <label>
+        Tên sản phẩm
+        <input
+          id="product-name-input"
+          type="text"
+          placeholder="Ví dụ: Submariner Date"
+          required
+        >
+      </label>
+
+      <label>
+        Reference
+        <input
+          id="product-reference-input"
+          type="text"
+          placeholder="Ví dụ: 126610LN"
+          required
+        >
+      </label>
+
+      <label>
+        Giá bán (triệu VND)
+        <input
+          id="product-price-input"
+          type="number"
+          min="0"
+          step="1"
+          required
+        >
+      </label>
+
+      <label>
+        Tình trạng
+        <input
+          id="product-condition-input"
+          type="text"
+          placeholder="Chưa sử dụng"
+        >
+      </label>
+
+      <label>
+        Năm sản xuất
+        <input
+          id="product-year-input"
+          type="text"
+          placeholder="2024"
+        >
+      </label>
+
+      <label>
+        Hộp
+        <select id="product-box-input">
+          <option value="Có">Có</option>
+          <option value="Không">Không</option>
+          <option value="Liên hệ">Liên hệ</option>
+        </select>
+      </label>
+
+      <label>
+        Giấy tờ
+        <select id="product-papers-input">
+          <option value="Có">Có</option>
+          <option value="Không">Không</option>
+          <option value="Liên hệ">Liên hệ</option>
+        </select>
+      </label>
+
+      <label>
+        Trạng thái
+        <select id="product-status-input">
+          <option value="available">Đang bán</option>
+          <option value="sold">Đã bán</option>
+          <option value="hidden">Ẩn sản phẩm</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="admin-description-field">
+      Mô tả sản phẩm
+      <textarea
+        id="product-description-input"
+        rows="4"
+      ></textarea>
+    </label>
+
+    <label class="admin-image-field">
+      Ảnh sản phẩm
+      <input
+        id="product-images-input"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif"
+        multiple
+      >
+      <small>
+        Có thể chọn nhiều ảnh. Mỗi ảnh tối đa 10 MB.
+      </small>
+    </label>
+
+    <div class="admin-form-actions">
+      <button type="submit">Lưu sản phẩm</button>
+
+      <button id="cancel-product-button" type="button">
+        Hủy
+      </button>
+    </div>
+  </form>
+
+  <div class="admin-table-wrapper">
+    <table class="admin-table product-admin-table">
+      <thead>
+        <tr>
+          <th>Mã</th>
+          <th>Thương hiệu</th>
+          <th>Sản phẩm</th>
+          <th>Reference</th>
+          <th>Giá bán</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+
+      <tbody id="product-table-body"></tbody>
+    </table>
+  </div>
+
+  <p id="product-admin-message" role="status"></p>
+</section>
       </section>
     </main>
 
