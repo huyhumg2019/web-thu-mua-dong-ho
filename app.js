@@ -13,6 +13,59 @@ const buyModels={rolex:[
   {name:'Explorer',ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
   {name:'Sky-Dweller',ref:'Dòng Sky-Dweller',image:images.sky,n:0,u:0}
 ],patek:[{name:'Nautilus',ref:'5711/1A-010',image:images.patek,n:3500,u:3200},{name:'Aquanaut',ref:'5167A-001',image:images.patek,n:1200,u:1080}],ap:[{name:'Royal Oak',ref:'15510ST',image:images.ap,n:1200,u:1100},{name:'Royal Oak Offshore',ref:'26420SO',image:images.ap,n:780,u:690}]};
+let csvPrices = [];
+let csvPricesLoaded = false;
+
+fetch("./data/prices.csv")
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error("Không đọc được prices.csv");
+    }
+
+    return response.text();
+  })
+  .then((csvText) => {
+    const lines = csvText
+      .replace(/^\uFEFF/, "")
+      .trim()
+      .split(/\r?\n/);
+
+    csvPrices = lines.slice(1).map((line) => {
+      const [
+        reference,
+        brand,
+        family,
+        model,
+        newPrice,
+        usedPrice,
+        updatedAt,
+      ] = line.split(",").map((value) => value.trim());
+
+      let image = images.rolex;
+
+      if (reference.startsWith("126710")) {
+        image = images.pepsi;
+      } else if (reference.startsWith("126500")) {
+        image = images.daytona;
+      } else if (reference.startsWith("126610")) {
+        image = images.submariner;
+      }
+
+      return {
+        name: `${brand} ${family} ${model}`,
+        ref: reference,
+        image,
+        n: Number(newPrice),
+        u: Number(usedPrice),
+        updatedAt,
+      };
+    });
+
+    csvPricesLoaded = true;
+  })
+  .catch((error) => {
+    console.error(error);
+  });
 const saleItems=[{name:'Rolex GMT-Master II Pepsi',ref:'126710BLRO',image:images.pepsi,price:600,type:'Hàng REWATCH',condition:'Chưa sử dụng'},{name:'Patek Philippe Nautilus',ref:'5711/1A-010',image:images.patek,price:3500,type:'Hàng ký gửi',condition:'Đã qua sử dụng'},{name:'Audemars Piguet Royal Oak',ref:'15510ST',image:images.ap,price:1200,type:'Hàng ký gửi',condition:'Tình trạng rất tốt'},{name:'Rolex Cosmograph Daytona',ref:'126500LN',image:images.daytona,price:910,type:'Hàng REWATCH',condition:'Chưa sử dụng'}];
 const vnd=n=>n?new Intl.NumberFormat('vi-VN').format(n)+' triệu VND':'Liên hệ';
 const brandTrack=document.getElementById('brand-track');
@@ -25,5 +78,31 @@ document.querySelectorAll('.arrow').forEach(btn=>btn.onclick=()=>{const t=docume
 function openDialog(p,mode){document.getElementById('dialog-image').src=p.image;document.getElementById('dialog-image').alt=p.name;document.getElementById('dialog-name').textContent=p.name;document.getElementById('dialog-ref').textContent='Reference: '+p.ref;document.getElementById('dialog-label').textContent=mode==='buy'?'GIÁ THU MUA DỰ KIẾN':p.type;document.getElementById('dialog-prices').innerHTML=mode==='buy'?`<div class="price-line"><span>Hàng mới</span><b>${p.n?'~'+vnd(p.n):'Liên hệ'}</b></div><div class="price-line"><span>Hàng đã dùng</span><b>${p.u?'~'+vnd(p.u):'Liên hệ'}</b></div>`:`<div class="price-line"><span>Giá bán</span><b>${vnd(p.price)}</b></div><div class="price-line"><span>Tình trạng</span><b>${p.condition}</b></div>`;document.getElementById('dialog-note').textContent=mode==='buy'?'Giá cuối cùng phụ thuộc tình trạng, năm sản xuất, hộp, giấy tờ và phụ kiện.':'Liên hệ để kiểm tra tình trạng còn hàng và đặt lịch xem.';document.getElementById('price-dialog').showModal()}
 document.querySelector('.close').onclick=()=>document.getElementById('price-dialog').close();
 document.getElementById('price-dialog').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.close()};
-document.getElementById('search-form').onsubmit=e=>{e.preventDefault();const code=document.getElementById('reference').value.trim().toUpperCase();let found;Object.values(buyModels).some(list=>list.some(p=>p.ref.toUpperCase()===code?(found=p,true):false));if(found){openDialog(found,'buy');document.getElementById('search-message').textContent=''}else document.getElementById('search-message').textContent='Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.'};
+document.getElementById("search-form").onsubmit = (event) => {
+  event.preventDefault();
+
+  const code = document
+    .getElementById("reference")
+    .value.trim()
+    .toUpperCase();
+
+  const message = document.getElementById("search-message");
+
+  if (!csvPricesLoaded) {
+    message.textContent = "Dữ liệu giá đang tải. Vui lòng thử lại.";
+    return;
+  }
+
+  const found = csvPrices.find(
+    (watch) => watch.ref.toUpperCase() === code,
+  );
+
+  if (found) {
+    openDialog(found, "buy");
+    message.textContent = "";
+  } else {
+    message.textContent =
+      "Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.";
+  }
+};
 document.querySelector('.menu').onclick=()=>document.body.classList.toggle('menu-open');
