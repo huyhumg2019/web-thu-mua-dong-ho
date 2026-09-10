@@ -95,12 +95,49 @@
               required
             >
           </label>
+          <button
+            id="forgot-password-button"
+            class="forgot-password-button"
+            type="button"
+          >
+            Quên mật khẩu?
+          </button>
 
           <button class="account-primary" type="submit">
             Đăng nhập
           </button>
         </form>
+        <form id="customer-reset-form" hidden>
+          <p>
+            Nhập mật khẩu mới cho tài khoản của bạn.
+          </p>
 
+          <label>
+            Mật khẩu mới
+            <input
+              id="customer-reset-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </label>
+
+          <label>
+            Nhập lại mật khẩu mới
+            <input
+              id="customer-reset-confirm-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </label>
+
+          <button class="account-primary" type="submit">
+            Lưu mật khẩu mới
+          </button>
+        </form>
         <form id="customer-register-form" hidden>
           <label>
             Họ và tên
@@ -207,6 +244,7 @@
                 <th>Ngày gửi</th>
                 <th>Số đồng hồ</th>
                 <th>Trạng thái</th>
+                                <th>Chi tiết</th>
               </tr>
             </thead>
 
@@ -218,7 +256,27 @@
       </div>
     </section>
   </main>
+  <dialog id="customer-request-dialog">
+    <button
+      id="customer-request-close"
+      class="customer-request-close"
+      type="button"
+      aria-label="Đóng"
+    >
+      ×
+    </button>
 
+    <div class="customer-request-detail">
+      <span class="account-kicker">
+        CHI TIẾT YÊU CẦU
+      </span>
+
+      <h2 id="detail-request-code"></h2>
+      <p id="detail-request-status"></p>
+
+      <div id="detail-request-items"></div>
+    </div>
+  </dialog>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="account.js"></script>

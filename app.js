@@ -63,7 +63,7 @@ supabasePublicClient
 let saleItems = [];
 const vnd=n=>n?new Intl.NumberFormat('vi-VN').format(n)+' triệu VND':'Liên hệ';
 const brandTrack=document.getElementById('brand-track');
-brands.forEach(b=>{const el=document.createElement('button');el.className='watch-card brand-card';el.innerHTML=`<span class="card-label">THU MUA</span><img src="${b.image}" alt="${b.name}" loading="lazy"><h3>${b.name}</h3><p>${b.copy}</p><small>${b.count} →</small>`;el.onclick=()=>showBrand(b);brandTrack.appendChild(el)});
+brands.forEach(b=>{const el=document.createElement('button');el.className='watch-card brand-card';el.innerHTML=`<span class="card-label">THU MUA</span><img src="${b.image}" alt="${b.name}" loading="lazy"><h3>${b.name}</h3><p>${b.copy}</p><small>Xem chi tiết →</small>`;el.onclick=()=>showBrand(b);brandTrack.appendChild(el)});
 const saleTrack = document.getElementById("sale-track");
 
 saleTrack.innerHTML = `
@@ -435,38 +435,103 @@ const sellRequestForm = document.getElementById(
   "sell-request-form",
 );
 
+function openSellRequestDialog({
+  type,
+  watchName = "",
+  watchReference = "",
+}) {
+  const priceDialog =
+    document.getElementById("price-dialog");
+
+  const consignFields = document.getElementById(
+    "consign-watch-fields",
+  );
+
+  const consignBrand = document.getElementById(
+    "consign-watch-brand",
+  );
+
+  const consignModel = document.getElementById(
+    "consign-watch-model",
+  );
+
+  sellRequestForm.reset();
+
+  document.getElementById("request-type").value = type;
+
+  const isConsignment = type === "consignment";
+
+  document.getElementById(
+    "request-dialog-kicker",
+  ).textContent = isConsignment
+    ? "YÊU CẦU BÁN HỘ"
+    : "YÊU CẦU THU MUA";
+
+  document.getElementById(
+    "request-dialog-title",
+  ).textContent = isConsignment
+    ? "Đăng đồng hồ cần bán"
+    : "Thông tin đồng hồ";
+
+  document.getElementById(
+    "request-submit-button",
+  ).textContent = isConsignment
+    ? "Gửi yêu cầu bán hộ"
+    : "Gửi yêu cầu thu mua";
+
+  consignFields.hidden = !isConsignment;
+  consignBrand.required = isConsignment;
+  consignModel.required = isConsignment;
+
+  document.getElementById(
+    "request-watch-name",
+  ).textContent = isConsignment ? "" : watchName;
+
+  document.getElementById(
+    "request-watch-reference",
+  ).textContent =
+    !isConsignment && watchReference
+      ? `Reference: ${watchReference}`
+      : "";
+
+  document.getElementById(
+    "request-message",
+  ).textContent = "";
+
+  if (priceDialog.open) {
+    priceDialog.close();
+  }
+
+  history.pushState(
+    { rewatchSellRequest: true },
+    "",
+    window.location.href,
+  );
+
+  sellRequestDialog.showModal();
+}
+
 document
   .getElementById("sell-request-button")
   .addEventListener("click", (event) => {
     const button = event.currentTarget;
-    const priceDialog =
-      document.getElementById("price-dialog");
 
-    sellRequestForm.reset();
+    openSellRequestDialog({
+      type: "purchase",
+      watchName: button.dataset.watchName || "",
+      watchReference:
+        button.dataset.watchReference || "",
+    });
+  });
 
-    document.getElementById(
-      "request-watch-name",
-    ).textContent = button.dataset.watchName || "";
+document
+  .getElementById("consign-request-button")
+  .addEventListener("click", (event) => {
+    event.preventDefault();
 
-    document.getElementById(
-      "request-watch-reference",
-    ).textContent = button.dataset.watchReference
-      ? `Reference: ${button.dataset.watchReference}`
-      : "";
-
-    document.getElementById(
-      "request-message",
-    ).textContent = "";
-
-    priceDialog.close();
-
-    history.replaceState(
-      { rewatchSellRequest: true },
-      "",
-      window.location.href,
-    );
-
-    sellRequestDialog.showModal();
+    openSellRequestDialog({
+      type: "consignment",
+    });
   });
 
 function closeSellRequestDialog() {
@@ -512,4 +577,290 @@ sellRequestForm.addEventListener("submit", (event) => {
     "request-message",
   ).textContent =
     "Biểu mẫu đã sẵn sàng. Bước tiếp theo sẽ kết nối gửi dữ liệu.";
-});
+});sellRequestForm.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    const message = document.getElementById(
+      "request-message",
+    );
+
+    const submitButton = document.getElementById(
+      "request-submit-button",
+    );
+
+    const {
+      data: { session },
+    } = await supabasePublicClient.auth.getSession();
+
+    if (!session) {
+      message.innerHTML =
+        'Bạn cần <a href="account.html">đăng nhập tài khoản khách hàng</a> trước khi gửi form.';
+
+      return;
+    }
+
+    const requestType = document.getElementById(
+      "request-type",
+    ).value;
+
+    const isConsignment =
+      requestType === "consignment";
+
+    const brand = isConsignment
+      ? document
+          .getElementById("consign-watch-brand")
+          .value.trim()
+      : "";
+
+    const model = isConsignment
+      ? document
+          .getElementById("consign-watch-model")
+          .value.trim()
+      : document
+          .getElementById("request-watch-name")
+          .textContent.trim();
+
+    const reference = isConsignment
+      ? document
+          .getElementById("consign-watch-reference")
+          .value.trim()
+      : document
+          .getElementById("request-watch-reference")
+          .textContent.replace("Reference:", "")
+          .trim();
+
+    const watchName = isConsignment
+      ? `${brand} ${model}`.trim()
+      : model;
+
+    const item = {
+      watch_name: watchName,
+      brand,
+      family: "",
+      model,
+      reference,
+      watch_condition: document.getElementById(
+        "request-condition",
+      ).value,
+      manufacture_year: document.getElementById(
+        "request-year",
+      ).value.trim(),
+      expected_price_million_vnd:
+        document.getElementById("request-price").value,
+      box_status:
+        document.getElementById("request-box").value,
+      papers_status:
+        document.getElementById("request-papers").value,
+      note: document
+        .getElementById("request-note")
+        .value.trim(),
+    };
+        const selectedFiles = Array.from(
+      document.getElementById("request-images").files,
+    );
+
+    const allowedImageTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    if (selectedFiles.length > 5) {
+      message.textContent =
+        "Mỗi đồng hồ chỉ được gửi tối đa 5 ảnh.";
+
+      return;
+    }
+
+    for (const file of selectedFiles) {
+      if (!allowedImageTypes.includes(file.type)) {
+        message.textContent =
+          "Ảnh phải có định dạng JPG, PNG, WebP hoặc AVIF.";
+
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        message.textContent =
+          `Ảnh "${file.name}" vượt quá 10 MB.`;
+
+        return;
+      }
+    }
+
+    submitButton.disabled = true;
+    message.textContent = "Đang gửi yêu cầu...";
+
+    const { data, error } =
+      await supabasePublicClient.rpc(
+        "create_customer_watch_request",
+        {
+          p_request_type: requestType,
+          p_customer_name: document
+            .getElementById("customer-name")
+            .value.trim(),
+          p_contact_method: document.getElementById(
+            "customer-contact-method",
+          ).value,
+          p_contact_value: document
+            .getElementById("customer-contact")
+            .value.trim(),
+          p_customer_note: "",
+          p_items: [item],
+        },
+      );
+
+       if (error) {
+      submitButton.disabled = false;
+      console.error(error);
+
+      message.textContent =
+        error.message ||
+        "Không thể gửi yêu cầu. Vui lòng thử lại.";
+
+      return;
+    }
+
+    const requestId = data?.[0]?.request_id;
+    const requestCode =
+      data?.[0]?.request_code || "";
+
+    if (selectedFiles.length > 0) {
+      message.textContent =
+        `Đang tải ${selectedFiles.length} ảnh...`;
+
+      const {
+        data: requestItem,
+        error: itemError,
+      } = await supabasePublicClient
+        .from("purchase_request_items")
+        .select("id")
+        .eq("request_id", requestId)
+        .order("item_number", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (itemError || !requestItem) {
+        submitButton.disabled = false;
+        console.error(itemError);
+
+        message.textContent =
+          `Đã lưu ${requestCode}, nhưng chưa thể tải ảnh.`;
+
+        return;
+      }
+
+      const uploadedPaths = [];
+      const imageRows = [];
+
+      for (
+        let index = 0;
+        index < selectedFiles.length;
+        index += 1
+      ) {
+        const file = selectedFiles[index];
+
+        const extension =
+          file.name
+            .split(".")
+            .pop()
+            ?.toLowerCase()
+            .replace(/[^a-z0-9]/g, "") || "jpg";
+
+        const storagePath =
+          `${session.user.id}/${requestId}/` +
+          `${requestItem.id}/${crypto.randomUUID()}.${extension}`;
+
+        const { error: uploadError } =
+          await supabasePublicClient.storage
+            .from("purchase-request-images")
+            .upload(storagePath, file, {
+              contentType: file.type,
+              upsert: false,
+            });
+
+        if (uploadError) {
+          console.error(uploadError);
+
+          if (uploadedPaths.length > 0) {
+            await supabasePublicClient.storage
+              .from("purchase-request-images")
+              .remove(uploadedPaths);
+          }
+
+          submitButton.disabled = false;
+
+          message.textContent =
+            `Đã lưu ${requestCode}, nhưng tải ảnh thất bại.`;
+
+          return;
+        }
+
+        uploadedPaths.push(storagePath);
+
+        imageRows.push({
+          request_item_id: requestItem.id,
+          storage_path: storagePath,
+          display_order: index,
+        });
+      }
+
+      const { error: imageDataError } =
+        await supabasePublicClient
+          .from("purchase_request_images")
+          .insert(imageRows);
+
+      if (imageDataError) {
+        console.error(imageDataError);
+
+        await supabasePublicClient.storage
+          .from("purchase-request-images")
+          .remove(uploadedPaths);
+
+        submitButton.disabled = false;
+
+        message.textContent =
+          `Đã lưu ${requestCode}, nhưng chưa thể lưu thông tin ảnh.`;
+
+        return;
+      }
+    }
+
+    submitButton.disabled = false;
+    sellRequestForm.reset();
+
+    message.textContent = requestCode
+      ? `Đã gửi thành công. Mã yêu cầu: ${requestCode}. ` +
+        `Đã tải ${selectedFiles.length} ảnh.`
+      : "Đã gửi yêu cầu thành công.";
+  },
+);
+async function updateAccountNavigation() {
+  const accountLink = document.getElementById(
+    "account-nav-link",
+  );
+
+  if (!accountLink) {
+    return;
+  }
+
+  const {
+    data: { session },
+  } = await supabasePublicClient.auth.getSession();
+
+  if (session) {
+    accountLink.textContent = "Tài khoản của tôi";
+    accountLink.classList.add("logged-in");
+    accountLink.title =
+      `Đang đăng nhập: ${session.user.email}`;
+  } else {
+    accountLink.textContent = "Đăng nhập";
+    accountLink.classList.remove("logged-in");
+    accountLink.title = "Đăng nhập tài khoản khách hàng";
+  }
+}
+
+updateAccountNavigation();

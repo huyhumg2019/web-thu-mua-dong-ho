@@ -99,7 +99,7 @@ function renderCustomerRequests(requests) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
 
-    cell.colSpan = 4;
+    cell.colSpan = 5;
     cell.textContent =
       "Bạn chưa có yêu cầu thu mua nào.";
 
@@ -115,8 +115,10 @@ function renderCustomerRequests(requests) {
     const codeCell = document.createElement("td");
     const dateCell = document.createElement("td");
     const itemCountCell = document.createElement("td");
-    const statusCell = document.createElement("td");
+      const statusCell = document.createElement("td");
     const statusLabel = document.createElement("span");
+    const detailCell = document.createElement("td");
+    const detailButton = document.createElement("button");
 
     codeCell.textContent = request.request_code;
     dateCell.textContent =
@@ -132,11 +134,21 @@ function renderCustomerRequests(requests) {
       getRequestStatusText(request.status);
 
     statusCell.appendChild(statusLabel);
+    detailButton.type = "button";
+    detailButton.className = "customer-detail-button";
+    detailButton.textContent = "Xem chi tiết";
+
+    detailButton.addEventListener("click", () => {
+      openCustomerRequestDetail(request);
+    });
+
+    detailCell.appendChild(detailButton);
 
     row.appendChild(codeCell);
     row.appendChild(dateCell);
     row.appendChild(itemCountCell);
     row.appendChild(statusCell);
+    row.appendChild(detailCell);
 
     requestTableBody.appendChild(row);
   });
@@ -171,6 +183,213 @@ function updateCustomerSummary(requests) {
   ).textContent = completedTotal;
 }
 
+const customerRequestDialog = document.getElementById(
+  "customer-request-dialog",
+);
+
+function getConditionText(condition) {
+  const conditionNames = {
+    unused: "Chưa sử dụng",
+    "very-good": "Đã dùng – tình trạng rất tốt",
+    used: "Đã qua sử dụng",
+    "needs-check": "Cần REWATCH kiểm tra",
+  };
+
+  return conditionNames[condition] || condition || "Chưa cung cấp";
+}
+
+function getYesNoText(value) {
+  const valueNames = {
+    yes: "Có",
+    no: "Không",
+    unknown: "Không rõ",
+  };
+
+  return valueNames[value] || value || "Chưa cung cấp";
+}
+
+function appendRequestInformation(
+  container,
+  label,
+  value,
+) {
+  const row = document.createElement("p");
+  const labelElement = document.createElement("span");
+  const valueElement = document.createElement("strong");
+
+  labelElement.textContent = label;
+  valueElement.textContent =
+    value || "Chưa cung cấp";
+
+  row.appendChild(labelElement);
+  row.appendChild(valueElement);
+  container.appendChild(row);
+}
+
+async function openCustomerRequestDetail(request) {
+  document.getElementById(
+    "detail-request-code",
+  ).textContent = request.request_code;
+
+  document.getElementById(
+    "detail-request-status",
+  ).textContent =
+    `${request.request_type === "consignment"
+      ? "Yêu cầu bán hộ"
+      : "Yêu cầu thu mua"} · ` +
+    getRequestStatusText(request.status);
+
+  const itemsContainer = document.getElementById(
+    "detail-request-items",
+  );
+
+  itemsContainer.innerHTML = "";
+
+  customerRequestDialog.showModal();
+
+  const items =
+    request.purchase_request_items || [];
+
+  for (const item of items) {
+    const article = document.createElement("article");
+    const heading = document.createElement("h3");
+    const information = document.createElement("div");
+    const imageGallery = document.createElement("div");
+
+   article.className = "customer-request-item";
+  information.className =
+      "customer-request-item-information";
+    imageGallery.className =
+      "customer-request-image-gallery";
+
+    heading.textContent =
+      item.watch_name || `Đồng hồ ${item.item_number}`;
+
+    appendRequestInformation(
+      information,
+      "Reference",
+      item.reference,
+    );
+
+    appendRequestInformation(
+      information,
+      "Tình trạng",
+      getConditionText(item.watch_condition),
+    );
+
+    appendRequestInformation(
+      information,
+      "Năm sản xuất",
+      item.manufacture_year,
+    );
+
+    appendRequestInformation(
+      information,
+      "Giá mong muốn",
+      item.expected_price_million_vnd
+        ? `${new Intl.NumberFormat("vi-VN").format(
+            item.expected_price_million_vnd,
+          )} triệu VND`
+        : "Không cung cấp",
+    );
+
+    appendRequestInformation(
+      information,
+      "Hộp",
+      getYesNoText(item.box_status),
+    );
+
+    appendRequestInformation(
+      information,
+      "Giấy tờ",
+      getYesNoText(item.papers_status),
+    );
+
+    if (item.note) {
+      appendRequestInformation(
+        information,
+        "Ghi chú",
+        item.note,
+      );
+    }
+
+    const images = [
+      ...(item.purchase_request_images || []),
+    ].sort(
+      (first, second) =>
+        first.display_order - second.display_order,
+    );
+
+    if (images.length === 0) {
+      const emptyImageMessage =
+        document.createElement("p");
+
+      emptyImageMessage.textContent =
+        "Yêu cầu này chưa có ảnh.";
+
+      imageGallery.appendChild(emptyImageMessage);
+    } else {
+      const { data: signedImages, error } =
+        await accountSupabase.storage
+          .from("purchase-request-images")
+          .createSignedUrls(
+            images.map((image) => image.storage_path),
+            3600,
+          );
+
+      if (error) {
+        console.error(error);
+
+        const imageError =
+          document.createElement("p");
+
+        imageError.textContent =
+          "Không thể tải ảnh đồng hồ.";
+
+        imageGallery.appendChild(imageError);
+      } else {
+        signedImages.forEach((signedImage, index) => {
+          if (!signedImage.signedUrl) {
+            return;
+          }
+
+          const imageElement =
+            document.createElement("img");
+
+          imageElement.src = signedImage.signedUrl;
+          imageElement.alt =
+            `${item.watch_name || "Đồng hồ"} - ảnh ${index + 1}`;
+
+          imageElement.loading = "lazy";
+
+          imageGallery.appendChild(imageElement);
+        });
+      }
+    }
+
+    article.appendChild(heading);
+    article.appendChild(information);
+    article.appendChild(imageGallery);
+
+    itemsContainer.appendChild(article);
+  }
+}
+
+document
+  .getElementById("customer-request-close")
+  .addEventListener("click", () => {
+    customerRequestDialog.close();
+  });
+
+customerRequestDialog.addEventListener(
+  "click",
+  (event) => {
+    if (event.target === customerRequestDialog) {
+      customerRequestDialog.close();
+    }
+  },
+);
+
 async function loadCustomerRequests(customerId) {
   dashboardMessage.textContent =
     "Đang tải lịch sử giao dịch...";
@@ -179,10 +398,27 @@ async function loadCustomerRequests(customerId) {
     .from("purchase_requests")
     .select(`
       request_code,
+      request_type,
       status,
       created_at,
       purchase_request_items (
-        id
+        id,
+        item_number,
+        watch_name,
+        brand,
+        family,
+        model,
+        reference,
+        watch_condition,
+        manufacture_year,
+        expected_price_million_vnd,
+        box_status,
+        papers_status,
+        note,
+        purchase_request_images (
+          storage_path,
+          display_order
+        )
       )
     `)
     .eq("customer_id", customerId)
@@ -389,9 +625,157 @@ async function startCustomerAccount() {
     data: { session },
   } = await accountSupabase.auth.getSession();
 
+  const isPasswordRecovery =
+    new URLSearchParams(window.location.search)
+      .get("recovery") === "1";
+
+  if (session && isPasswordRecovery) {
+    showResetPasswordForm();
+    return;
+  }
+
   if (session) {
     await showCustomerAccount(session);
   }
 }
+
+const forgotPasswordButton = document.getElementById(
+  "forgot-password-button",
+);
+
+const resetForm = document.getElementById(
+  "customer-reset-form",
+);
+
+const authTabs = document.querySelector(".auth-tabs");
+
+function showResetPasswordForm() {
+  authPanel.hidden = false;
+  customerDashboard.hidden = true;
+
+  loginForm.hidden = true;
+  registerForm.hidden = true;
+  resetForm.hidden = false;
+  authTabs.hidden = true;
+
+  authMessage.textContent =
+    "Hãy nhập mật khẩu mới cho tài khoản.";
+}
+
+forgotPasswordButton.addEventListener(
+  "click",
+  async () => {
+    const email = document
+      .getElementById("customer-login-email")
+      .value
+      .trim();
+
+    if (!email) {
+      authMessage.textContent =
+        "Vui lòng nhập email trước khi đặt lại mật khẩu.";
+
+      return;
+    }
+
+    forgotPasswordButton.disabled = true;
+    authMessage.textContent =
+      "Đang gửi email đặt lại mật khẩu...";
+
+      const redirectTo =
+      `${window.location.origin}${window.location.pathname}?recovery=1`;
+
+    const { error } =
+      await accountSupabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo,
+        },
+      );
+
+    if (error) {
+      console.error(error);
+
+      authMessage.textContent =
+        error.message
+          .toLowerCase()
+          .includes("rate limit")
+          ? "Bạn đã gửi quá nhiều lần. Vui lòng chờ khoảng 1 giờ rồi thử lại."
+          : "Không thể gửi email đặt lại mật khẩu.";
+
+      forgotPasswordButton.disabled = false;
+      return;
+    }
+
+    authMessage.textContent =
+      "Đã gửi email. Vui lòng kiểm tra hộp thư và mục Spam.";
+
+    window.setTimeout(() => {
+      forgotPasswordButton.disabled = false;
+    }, 60000);
+  },
+);
+
+resetForm.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    const password = document.getElementById(
+      "customer-reset-password",
+    ).value;
+
+    const confirmPassword = document.getElementById(
+      "customer-reset-confirm-password",
+    ).value;
+
+    if (password.length < 8) {
+      authMessage.textContent =
+        "Mật khẩu cần có ít nhất 8 ký tự.";
+
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      authMessage.textContent =
+        "Hai mật khẩu mới chưa giống nhau.";
+
+      return;
+    }
+
+    authMessage.textContent =
+      "Đang lưu mật khẩu mới...";
+
+    const { error } =
+      await accountSupabase.auth.updateUser({
+        password,
+      });
+
+    if (error) {
+      console.error(error);
+
+      authMessage.textContent =
+        "Không thể lưu mật khẩu mới. Liên kết có thể đã hết hạn.";
+
+      return;
+    }
+
+    await accountSupabase.auth.signOut();
+
+    resetForm.reset();
+    resetForm.hidden = true;
+    authTabs.hidden = false;
+
+    showLoginForm();
+
+    authMessage.textContent =
+      "Đã đổi mật khẩu. Bây giờ bạn có thể đăng nhập.";
+  },
+);
+
+accountSupabase.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showResetPasswordForm();
+  }
+});
 
 startCustomerAccount();

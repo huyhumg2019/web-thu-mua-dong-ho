@@ -207,3 +207,66 @@
     grid-template-columns: 1fr;
   }
 }
+#consign-watch-fields[hidden] {
+  display: none !important;
+}
+
+#consign-watch-fields {
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #dddddd;
+}
+.sell-quick-contact {
+  margin: 18px 0 28px;
+  padding: 18px;
+  border: 1px solid #dddddd;
+  background: #fafafa;
+}
+
+.sell-quick-contact p {
+  margin: 0 0 12px;
+  color: #444444;
+  font-size: 14px;
+}
+
+.sell-quick-contact-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sell-quick-contact-buttons a {
+  padding: 13px 10px;
+  border: 1px solid #cccccc;
+  background: #ffffff;
+  color: #171717;
+  text-align: center;
+  text-decoration: none;
+}
+
+.sell-quick-contact-buttons a:hover {
+  border-color: #bd2732;
+  background: #bd2732;
+  color: #ffffff;
+}
+
+@media (max-width: 600px) {
+  .sell-quick-contact-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+.account-nav-link.logged-in {
+  color: #171717;
+  font-weight: 600;
+}
+
+.account-nav-link.logged-in::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #238636;
+  vertical-align: middle;
+}
