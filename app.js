@@ -1,3 +1,7 @@
+const supabasePublicClient = supabase.createClient(
+  window.REWATCH_SUPABASE.url,
+  window.REWATCH_SUPABASE.publishableKey,
+);
 const images={rolex:'https://image.springnews.co.th/uploads/images/contents/w1024/2022/07/vCpMD13KYV4fssoRzOkc.webp?x-image-process=style%2Flg-webp',patek:'https://manufaktura-watches.ru/upload/resize_cache/iblock/200/739_1000_1/ekjgfrjcqndntebfe3imknvrbjio2xkm.jpg',ap:'https://verdaci.com/cdn/shop/products/apwhite.jpg?v=1678961381',pepsi:'https://firstclasstimepieces.com/cdn/shop/products/rolex-gmt-master-ii-pepsi-40mm-126710blro-black-dial-first-class-timepieces_1080x.jpg?v=1589439358',daytona:'https://greenwichtimecdm.com/cdn/shop/files/CosmographDaytona116520SteelWhiteDial40mm.png?v=1755039601&width=3840',datejust:'https://www.watchesofswitzerland.com/cdn/shop/files/m126334-0001.avif?v=6277866648194590207',submariner:'https://opis-cdn.tinkoffjournal.ru/mercury/03-divers-licence.png',daydate:'https://media.gq-magazine.co.uk/photos/69a1955d0960f39b26d021c0/master/w_1600%2Cc_limit/2702-Suit-Watches-9.jpg',oyster:'https://www.marcolino.pt/content/images/2025/watch_assets/upright_watches_assets/mobile/upright_m124200-0011.webp?v=1776682922',yacht:'https://delugs.com/cdn/shop/files/Rolex_-_Yacht-Master_40_-_126622-0001_-_PRO_690x690_crop_center.jpg?v=1713947717',sea:'https://www.robertgatwardjewellers.co.uk/cdn/shop/files/v7-m126600-0002_watch-assets-upright_landscape.webp?v=1746087673',air:'https://touchofgold.ca/cdn/shop/files/mobile_m126900-0001_drp-upright-bba-with-shadow_800x800_crop_center.webp?v=1738209079',explorer:'https://cdn.prod.website-files.com/64c794410a6c56562470f505/656024300aa08c8d4e44c6f9_124270-0001.png',sky:'https://www.aviandco.com/media/catalog/product/cache/ec2e76e256f4e9d4c0d7c929c318f728/r/o/rolex_sky_dweller_326934_white_index-1_4.jpg'};
 const brands=[{name:'Rolex',slug:'rolex',count:'10 dòng',image:images.rolex,copy:'Datejust · GMT-Master II · Submariner'},{name:'Patek Philippe',slug:'patek',count:'4 dòng',image:images.patek,copy:'Nautilus · Aquanaut · Calatrava'},{name:'Audemars Piguet',slug:'ap',count:'3 dòng',image:images.ap,copy:'Royal Oak · Offshore · Code 11.59'}];
 // Dữ liệu giá mẫu: chỉ cần sửa n (hàng mới) và u (hàng đã dùng), đơn vị triệu VND.
@@ -16,48 +20,35 @@ const buyModels={rolex:[
 let csvPrices = [];
 let csvPricesLoaded = false;
 
-fetch("./data/prices.csv")
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error("Không đọc được prices.csv");
+supabasePublicClient
+  .from("purchase_prices")
+  .select(
+    "reference, brand, family, model, new_price_million_vnd, used_price_million_vnd, updated_at",
+  )
+  .eq("active", true)
+  .then(({ data, error }) => {
+    if (error) {
+      throw error;
     }
 
-    return response.text();
-  })
-  .then((csvText) => {
-    const lines = csvText
-      .replace(/^\uFEFF/, "")
-      .trim()
-      .split(/\r?\n/);
-
-    csvPrices = lines.slice(1).map((line) => {
-      const [
-        reference,
-        brand,
-        family,
-        model,
-        newPrice,
-        usedPrice,
-        updatedAt,
-      ] = line.split(",").map((value) => value.trim());
-
+    csvPrices = data.map((watch) => {
       let image = images.rolex;
 
-      if (reference.startsWith("126710")) {
+      if (watch.reference.startsWith("126710")) {
         image = images.pepsi;
-      } else if (reference.startsWith("126500")) {
+      } else if (watch.reference.startsWith("126500")) {
         image = images.daytona;
-      } else if (reference.startsWith("126610")) {
+      } else if (watch.reference.startsWith("126610")) {
         image = images.submariner;
       }
 
       return {
-        name: `${brand} ${family} ${model}`,
-        ref: reference,
+        name: `${watch.brand} ${watch.family} ${watch.model}`,
+        ref: watch.reference,
         image,
-        n: Number(newPrice),
-        u: Number(usedPrice),
-        updatedAt,
+        n: Number(watch.new_price_million_vnd),
+        u: Number(watch.used_price_million_vnd),
+        updatedAt: watch.updated_at,
       };
     });
 

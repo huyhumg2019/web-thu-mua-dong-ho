@@ -1,0 +1,185 @@
+.admin-page {
+  min-height: calc(100vh - 84px);
+  padding: 70px 24px;
+  background: var(--paper);
+}
+
+.login-panel {
+  width: min(460px, 100%);
+  margin: 40px auto;
+  padding: 45px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.login-panel h1,
+.admin-heading h1 {
+  margin: 14px 0 30px;
+  font: 500 40px/1.2 "Playfair Display", serif;
+}
+
+#login-form label {
+  display: block;
+  margin: 18px 0 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#login-form input {
+  width: 100%;
+  height: 52px;
+  padding: 0 15px;
+  border: 1px solid #bbb;
+  background: #fff;
+}
+
+#login-form input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+#login-form button {
+  width: 100%;
+  height: 54px;
+  margin-top: 25px;
+  border: 0;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#login-form button:hover {
+  background: var(--red);
+}
+
+#login-message,
+#admin-message {
+  min-height: 24px;
+  color: var(--red);
+  font-size: 14px;
+}
+
+.admin-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 35px;
+}
+
+.admin-heading h1 {
+  margin-bottom: 8px;
+}
+
+#admin-user {
+  color: var(--grey);
+}
+
+.admin-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-heading-actions a,
+.admin-heading-actions button,
+.admin-toolbar button {
+  padding: 12px 18px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#logout-button {
+  background: var(--ink);
+  color: #fff;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.admin-toolbar input {
+  width: min(500px, 100%);
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #bbb;
+}
+
+.admin-table-wrapper {
+  margin-top: 18px;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 14px;
+}
+
+.admin-table th {
+  background: #f0f0ee;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.admin-table input {
+  width: 125px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #bbb;
+}
+
+.admin-table button {
+  padding: 10px 15px;
+  border: 0;
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+}
+
+.admin-table button:hover {
+  background: var(--red);
+}
+
+@media (max-width: 700px) {
+  .admin-page {
+    padding: 35px 15px;
+  }
+
+  .login-panel {
+    padding: 30px 22px;
+  }
+
+  .admin-heading,
+  .admin-toolbar {
+    flex-direction: column;
+  }
+
+  .admin-heading-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
