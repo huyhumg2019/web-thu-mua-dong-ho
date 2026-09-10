@@ -299,7 +299,82 @@ document
       behavior: "smooth",
     });
   });
-document.querySelectorAll('.arrow').forEach(btn=>btn.onclick=()=>{const t=document.getElementById(btn.dataset.target);t.scrollBy({left:(btn.classList.contains('next')?1:-1)*Math.min(t.clientWidth*.82,420),behavior:'smooth'})});
+function updateCarouselDots(track) {
+  const section = track.closest("section");
+  const dots = section?.querySelectorAll(".dots i");
+
+  if (!dots || dots.length === 0) {
+    return;
+  }
+
+  const maximumScroll =
+    track.scrollWidth - track.clientWidth;
+
+  const scrollProgress =
+    maximumScroll > 0
+      ? track.scrollLeft / maximumScroll
+      : 0;
+
+  const activeIndex = Math.round(
+    scrollProgress * (dots.length - 1),
+  );
+
+  dots.forEach((dot, index) => {
+    dot.classList.toggle(
+      "active",
+      index === activeIndex,
+    );
+  });
+}
+
+document.querySelectorAll(".track").forEach((track) => {
+  let animationFrame;
+
+  track.addEventListener("scroll", () => {
+    cancelAnimationFrame(animationFrame);
+
+    animationFrame = requestAnimationFrame(() => {
+      updateCarouselDots(track);
+    });
+  });
+
+  const section = track.closest("section");
+  const dots = section?.querySelectorAll(".dots i");
+
+  dots?.forEach((dot, index) => {
+    dot.addEventListener("click", () => {
+      const maximumScroll =
+        track.scrollWidth - track.clientWidth;
+
+      track.scrollTo({
+        left:
+          maximumScroll *
+          (index / Math.max(dots.length - 1, 1)),
+        behavior: "smooth",
+      });
+    });
+  });
+
+  updateCarouselDots(track);
+});
+
+document.querySelectorAll(".arrow").forEach((button) => {
+  button.addEventListener("click", () => {
+    const track = document.getElementById(
+      button.dataset.target,
+    );
+
+    const direction =
+      button.classList.contains("next") ? 1 : -1;
+
+    track.scrollBy({
+      left:
+        direction *
+        Math.min(track.clientWidth * 0.82, 420),
+      behavior: "smooth",
+    });
+  });
+});
 function openDialog(product, mode) {
   const dialog = document.getElementById("price-dialog");
 
