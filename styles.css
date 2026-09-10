@@ -64,3 +64,146 @@
     grid-template-columns: 1fr;
   }
 }
+/* ===== BIỂU MẪU YÊU CẦU THU MUA ===== */
+
+#sell-request-dialog {
+  box-sizing: border-box;
+  width: min(900px, calc(100% - 32px));
+  max-width: 900px;
+  max-height: 90vh;
+  padding: 0;
+  border: 0;
+  background: #ffffff;
+  color: #171717;
+  overflow: auto;
+}
+
+#sell-request-dialog[open] {
+  display: block;
+}
+
+#sell-request-dialog::backdrop {
+ background: rgba(0, 0, 0, 0.72);
+}
+
+#sell-request-dialog .sell-request-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  z-index: 2;
+}
+
+.sell-request-content {
+  padding: 52px;
+}
+
+.sell-request-content h2 {
+  margin: 12px 0 10px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 38px;
+  font-weight: 500;
+}
+
+#request-watch-name {
+  margin: 0 0 5px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#request-watch-reference {
+  margin: 0 0 30px;
+  color: #777777;
+  font-size: 14px;
+}
+
+.request-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.request-form-grid label,
+.request-note-field,
+.request-image-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #444444;
+  font-size: 14px;
+}
+
+.request-form-grid input,
+.request-form-grid select,
+.request-note-field textarea,
+.request-image-field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid #cccccc;
+  border-radius: 0;
+  background: #ffffff;
+  color: #171717;
+  font: inherit;
+}
+
+.request-note-field,
+.request-image-field {
+  margin-top: 20px;
+}
+
+.request-note-field textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.request-image-field small {
+  color: #777777;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.request-privacy-note {
+  margin: 20px 0;
+  color: #777777;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.request-submit {
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid #171717;
+  border-radius: 0;
+  background: #171717;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.request-submit:hover {
+  border-color: #bd2732;
+  background: #bd2732;
+}
+
+#request-message {
+  min-height: 22px;
+  margin: 14px 0 0;
+  color: #bd2732;
+  font-size: 14px;
+}
+
+@media (max-width: 650px) {
+  .sell-request-content {
+    padding: 48px 22px 28px;
+  }
+
+  .sell-request-content h2 {
+    font-size: 31px;
+  }
+
+  .request-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

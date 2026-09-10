@@ -349,7 +349,14 @@ function openDialog(product, mode) {
     mode === "buy"
       ? "Giá cuối cùng phụ thuộc tình trạng, năm sản xuất, hộp, giấy tờ và phụ kiện."
       : "Liên hệ để kiểm tra tình trạng còn hàng và đặt lịch xem.";
+  if (mode === "buy") {
+    const requestButton = document.getElementById(
+      "sell-request-button",
+    );
 
+    requestButton.dataset.watchName = product.name;
+    requestButton.dataset.watchReference = product.ref;
+  }
   if (!dialog.open) {
     history.pushState(
       { rewatchPriceDialog: true },
@@ -418,3 +425,91 @@ document.getElementById("search-form").onsubmit = (event) => {
   }
 };
 document.querySelector('.menu').onclick=()=>document.body.classList.toggle('menu-open');
+/* ===== BIỂU MẪU KHÁCH MUỐN BÁN ĐỒNG HỒ ===== */
+
+const sellRequestDialog = document.getElementById(
+  "sell-request-dialog",
+);
+
+const sellRequestForm = document.getElementById(
+  "sell-request-form",
+);
+
+document
+  .getElementById("sell-request-button")
+  .addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const priceDialog =
+      document.getElementById("price-dialog");
+
+    sellRequestForm.reset();
+
+    document.getElementById(
+      "request-watch-name",
+    ).textContent = button.dataset.watchName || "";
+
+    document.getElementById(
+      "request-watch-reference",
+    ).textContent = button.dataset.watchReference
+      ? `Reference: ${button.dataset.watchReference}`
+      : "";
+
+    document.getElementById(
+      "request-message",
+    ).textContent = "";
+
+    priceDialog.close();
+
+    history.replaceState(
+      { rewatchSellRequest: true },
+      "",
+      window.location.href,
+    );
+
+    sellRequestDialog.showModal();
+  });
+
+function closeSellRequestDialog() {
+  if (history.state?.rewatchSellRequest) {
+    history.back();
+  } else if (sellRequestDialog.open) {
+    sellRequestDialog.close();
+  }
+}
+
+document
+  .querySelector(".sell-request-close")
+  .addEventListener("click", closeSellRequestDialog);
+
+sellRequestDialog.addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) {
+    closeSellRequestDialog();
+  }
+});
+
+sellRequestDialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeSellRequestDialog();
+});
+
+document
+  .getElementById("price-dialog")
+  .addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closePriceDialog();
+  });
+
+window.addEventListener("popstate", () => {
+  if (sellRequestDialog.open) {
+    sellRequestDialog.close();
+  }
+});
+
+sellRequestForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  document.getElementById(
+    "request-message",
+  ).textContent =
+    "Biểu mẫu đã sẵn sàng. Bước tiếp theo sẽ kết nối gửi dữ liệu.";
+});

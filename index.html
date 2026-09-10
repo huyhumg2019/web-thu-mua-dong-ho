@@ -55,6 +55,140 @@
     Gửi thông tin và ảnh
   </button>
 </div></div></dialog>
+<dialog id="sell-request-dialog">
+  <button
+    class="close sell-request-close"
+    type="button"
+    aria-label="Đóng"
+  >
+    ×
+  </button>
+
+  <div class="sell-request-content">
+    <span class="kicker">YÊU CẦU THU MUA</span>
+
+    <h2>Thông tin đồng hồ</h2>
+
+    <p id="request-watch-name"></p>
+    <p id="request-watch-reference"></p>
+
+    <form id="sell-request-form">
+      <div class="request-form-grid">
+        <label>
+          Họ và tên
+          <input
+            id="customer-name"
+            type="text"
+            autocomplete="name"
+            required
+          >
+        </label>
+
+        <label>
+          Kênh liên hệ
+          <select id="customer-contact-method" required>
+            <option value="zalo">Zalo</option>
+            <option value="line">LINE</option>
+            <option value="facebook">Facebook</option>
+            <option value="phone">Điện thoại</option>
+          </select>
+        </label>
+
+        <label>
+          Số điện thoại hoặc ID liên hệ
+          <input
+            id="customer-contact"
+            type="text"
+            required
+          >
+        </label>
+
+        <label>
+          Tình trạng đồng hồ
+          <select id="request-condition">
+            <option value="unused">Chưa sử dụng</option>
+            <option value="very-good">Đã dùng – tình trạng rất tốt</option>
+            <option value="used">Đã qua sử dụng</option>
+            <option value="needs-check">Cần REWATCH kiểm tra</option>
+          </select>
+        </label>
+
+        <label>
+          Năm sản xuất
+          <input
+            id="request-year"
+            type="text"
+            inputmode="numeric"
+            placeholder="Ví dụ: 2024"
+          >
+        </label>
+
+        <label>
+          Giá mong muốn (triệu VND)
+          <input
+            id="request-price"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="Không bắt buộc"
+          >
+        </label>
+
+        <label>
+          Hộp
+          <select id="request-box">
+            <option value="yes">Có</option>
+            <option value="no">Không</option>
+            <option value="unknown">Không rõ</option>
+          </select>
+        </label>
+
+        <label>
+          Giấy tờ
+          <select id="request-papers">
+            <option value="yes">Có</option>
+            <option value="no">Không</option>
+            <option value="unknown">Không rõ</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="request-note-field">
+        Ghi chú
+        <textarea
+          id="request-note"
+          rows="4"
+          placeholder="Tình trạng, phụ kiện hoặc thông tin khác"
+        ></textarea>
+      </label>
+
+      <label class="request-image-field">
+        Ảnh đồng hồ
+        <input
+          id="request-images"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          multiple
+        >
+        <small>
+          Có thể chọn nhiều ảnh: mặt trước, mặt sau, dây,
+          hộp và giấy tờ. Mỗi ảnh tối đa 10 MB.
+        </small>
+      </label>
+
+      <p class="request-privacy-note">
+        Thông tin và ảnh chỉ được sử dụng để REWATCH
+        kiểm tra và liên hệ báo giá.
+      </p>
+
+      <button class="primary request-submit" type="submit">
+        Gửi yêu cầu thu mua
+      </button>
+
+      <p id="request-message" role="status"></p>
+    </form>
+  </div>
+</dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="app.js"></script></body></html>
