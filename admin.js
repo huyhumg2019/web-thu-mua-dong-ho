@@ -505,17 +505,9 @@ productForm.addEventListener("submit", async (event) => {
   const editingProductId =
     editingProductIdInput.value.trim();
 
-  const productId = editingProductId ||
-    productIdInput.value.trim().toUpperCase();
+  let productId = editingProductId;
 
   const salePrice = Number(productPriceInput.value);
-
-  if (!productId) {
-    productAdminMessage.textContent =
-      "Vui lòng nhập mã quản lý.";
-
-    return;
-  }
 
   if (!Number.isFinite(salePrice) || salePrice < 0) {
     productAdminMessage.textContent =
@@ -571,14 +563,16 @@ productForm.addEventListener("submit", async (event) => {
     } else {
       const result = await supabaseClient
         .from("products")
-        .insert({
-          id: productId,
-          ...productData,
-        });
+        .insert(productData)
+        .select("id")
+        .single();
 
       saveError = result.error;
-    }
 
+      if (!saveError && result.data) {
+        productId = result.data.id;
+      }
+    }
     if (saveError) {
       throw saveError;
     }
