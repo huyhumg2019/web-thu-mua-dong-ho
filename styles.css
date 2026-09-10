@@ -1,1 +1,66 @@
 :root{--ink:#161616;--red:#a91f2b;--grey:#6d6d6d;--line:#dfdfdc;--paper:#f6f6f4}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:#fff;font:16px/1.6 Manrope,Arial,sans-serif}button,input{font:inherit}header{height:84px;padding:0 max(25px,calc((100vw - 1280px)/2));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e5e5;position:sticky;top:0;background:#fffc;backdrop-filter:blur(12px);z-index:20}.logo{font-size:23px;letter-spacing:.22em;text-decoration:none;color:inherit;position:relative}.logo strong{color:var(--red);font-weight:600}.logo small{display:block;font-size:8px;letter-spacing:.55em;color:#888;text-align:center;margin-top:-4px}nav{display:flex;gap:36px}nav a{font-size:14px;color:#555;text-decoration:none}nav a:hover{color:var(--red)}.menu{display:none;border:0;background:none;font-size:24px}.intro{max-width:1280px;margin:auto;min-height:430px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:90px;padding:70px 0}.kicker{font-size:12px;color:var(--red);font-weight:600;letter-spacing:.22em}.intro h1,.section-title h2,.consign h2,footer h2,dialog h2{font:500 56px/1.1 'Playfair Display',serif;margin:20px 0}.intro p,.section-title p{color:var(--grey)}#search-form label{font-size:12px;font-weight:600;letter-spacing:.13em}#search-form>div{display:flex;margin-top:12px}#search-form input{min-width:0;flex:1;height:58px;border:1px solid #bbb;padding:0 18px;text-transform:uppercase}#search-form button,.primary,.consign>a{border:0;background:var(--ink);color:white;padding:0 25px;font-weight:600;cursor:pointer;text-decoration:none}#search-form button:hover,.primary:hover,.consign>a:hover{background:var(--red)}#search-message{font-size:13px;color:var(--red);min-height:22px}.slider-section,.brand-models{padding:95px max(70px,calc((100vw - 1500px)/2));background:var(--paper)}.sale-section{background:#fff}.section-title{max-width:1280px;margin:0 auto 45px;display:flex;justify-content:space-between;align-items:end}.section-title h2{font-size:45px;margin-bottom:0}.section-title p{max-width:470px;margin:0}.carousel-shell{position:relative}.track{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:10px 4px 26px}.track::-webkit-scrollbar{display:none}.watch-card{flex:0 0 min(310px,76vw);scroll-snap-align:center;border:0;background:transparent;text-align:center;padding:0;cursor:pointer;color:inherit;position:relative}.watch-card img{display:block;width:100%;height:330px;object-fit:contain;padding:18px;mix-blend-mode:multiply;transition:transform .3s}.watch-card:hover img{transform:scale(1.035)}.watch-card h3{font:500 22px 'Playfair Display',serif;margin:15px 0 5px}.watch-card p{font-size:13px;color:#777;margin:0}.watch-card small{display:block;color:var(--red);font-weight:600;margin-top:12px}.card-label,.stock-tag{position:absolute;z-index:2;left:12px;top:12px;background:#fff;padding:6px 10px;font-size:10px;letter-spacing:.15em}.stock-tag{background:var(--ink);color:#fff}.sale-card{background:var(--paper);padding-bottom:22px}.sale-card strong{display:block;color:var(--red);margin-top:12px}.arrow{position:absolute;z-index:5;top:40%;width:48px;height:48px;border:1px solid #aaa;border-radius:50%;background:#fffd;font-size:30px;cursor:pointer}.prev{left:-58px}.next{right:-58px}.dots{text-align:center}.dots i{display:inline-block;width:5px;height:5px;border-radius:50%;background:#bbb;margin:0 6px}.dots .active{background:#222}.brand-models .model-track{max-width:1280px;margin:auto}.back{display:block;max-width:1280px;margin:0 auto 30px;border:0;background:none;color:var(--red);padding:0;cursor:pointer}.two-prices{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;text-align:left}.two-prices span{display:flex;justify-content:space-between;font-size:13px}.two-prices b{color:var(--red)}.consign{padding:110px max(25px,calc((100vw - 1050px)/2));background:#202020;color:#fff;text-align:center}.consign h2{font-size:50px}.consign p{color:#aaa;max-width:720px;margin:0 auto 35px}.consign>a{display:inline-block;padding:15px 25px;background:#fff;color:#111}footer{padding:80px max(25px,calc((100vw - 1280px)/2)) 30px;background:#101010;color:#fff;display:grid;grid-template-columns:.6fr 1.2fr 1fr;gap:40px;align-items:center}.footer-logo{color:#fff}footer h2{font-size:34px}.contacts{display:flex;justify-content:flex-end;gap:8px}.contacts a{color:#fff;text-decoration:none;border:1px solid #555;padding:13px 17px}.contacts a:hover{border-color:var(--red);background:var(--red)}footer>p{grid-column:1/-1;border-top:1px solid #333;padding-top:22px;color:#777;font-size:12px}dialog{width:min(900px,94vw);border:0;padding:0;box-shadow:0 30px 100px #0007}dialog::backdrop{background:#000a}dialog[open]{display:grid;grid-template-columns:1fr 1fr}dialog>img{width:100%;height:100%;min-height:520px;object-fit:contain;padding:30px;background:#eee;mix-blend-mode:multiply}.dialog-copy{padding:50px}.dialog-copy h2{font-size:35px}.dialog-copy>p,.dialog-copy>small{color:#777}.price-line{display:flex;justify-content:space-between;border-top:1px solid #ddd;padding:17px 0}.price-line b{color:var(--red)}.primary{display:block;text-align:center;padding:16px;margin-top:30px}.close{position:absolute;right:14px;top:8px;background:none;border:0;font-size:30px;cursor:pointer}@media(min-width:1000px){.brand-track .watch-card{flex-basis:calc((100% - 48px)/3)}.sale-track .watch-card,.model-track .watch-card{flex-basis:calc((100% - 72px)/4)}}@media(max-width:900px){header nav{display:none}.menu{display:block}.menu-open header nav{display:flex;position:absolute;top:84px;left:0;right:0;background:#fff;padding:25px;flex-direction:column}.intro{grid-template-columns:1fr;padding:60px 24px;gap:35px}.slider-section,.brand-models{padding:70px 24px}.section-title{display:block}.section-title p{margin-top:18px}.arrow{display:none}.consign{padding:80px 24px}footer{grid-template-columns:1fr}.contacts{justify-content:flex-start}dialog[open]{grid-template-columns:1fr}dialog>img{height:280px;min-height:0}.dialog-copy{padding:30px}}@media(max-width:520px){.intro h1{font-size:45px}.section-title h2,.consign h2{font-size:38px}#search-form>div{display:block}#search-form input,#search-form button{width:100%;height:54px}.watch-card{flex-basis:78vw}.watch-card img{height:300px}.slider-section,.brand-models{padding-right:18px}.contacts{flex-wrap:wrap}}
+/* ===== LIÊN HỆ THU MUA TRONG CỬA SỔ GIÁ ===== */
+
+.dialog-contact {
+  margin-top: 28px;
+}
+
+.dialog-contact-title {
+  margin: 0 0 12px;
+  color: #171717;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dialog-contact-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dialog-contact-buttons a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 1px solid #d2d2d2;
+  background: #ffffff;
+  color: #171717;
+  font-size: 14px;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dialog-contact-buttons a:hover {
+  border-color: #171717;
+  background: #171717;
+  color: #ffffff;
+}
+
+#sell-request-button {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 10px;
+  border: 1px solid #171717;
+  border-radius: 0;
+  background: #171717;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#sell-request-button:hover {
+  border-color: #bd2732;
+  background: #bd2732;
+}
+
+@media (max-width: 600px) {
+  .dialog-contact-buttons {
+    grid-template-columns: 1fr;
+  }
+}

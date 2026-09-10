@@ -8,12 +8,53 @@
 <form id="search-form"><label for="reference">TRA CỨU NHANH MÃ REFERENCE</label><div><input id="reference" placeholder="Ví dụ: 126710BLRO" autocomplete="off"><button>Tìm giá</button></div><p id="search-message" role="status"></p></form></section>
 <section class="slider-section" id="buy"><div class="section-title"><div><span class="kicker">DÀNH CHO NGƯỜI MUỐN BÁN</span><h2>Thu mua theo thương hiệu</h2></div></div>
 <div class="carousel-shell"><button class="arrow prev" data-target="brand-track" aria-label="Xem thương hiệu phía trước">‹</button><div class="track brand-track" id="brand-track"></div><button class="arrow next" data-target="brand-track" aria-label="Xem thương hiệu tiếp theo">›</button></div><div class="dots"><i class="active"></i><i></i><i></i></div></section>
-<section class="brand-models" id="brand-models" hidden><button class="back" id="brand-back">← Quay lại thương hiệu</button><div class="section-title"><div><span class="kicker">GIÁ THU MUA DỰ KIẾN</span><h2 id="brand-name"></h2></div></div><div class="carousel-shell"><button class="arrow prev" data-target="model-track" aria-label="Xem mẫu phía trước">‹</button><div class="track model-track" id="model-track"></div><button class="arrow next" data-target="model-track" aria-label="Xem mẫu tiếp theo">›</button></div><div class="dots"><i class="active"></i><i></i><i></i></div></section>
+<section class="brand-models" id="brand-models" hidden><button class="back" id="brand-back">← Quay lại  </button><div class="section-title"><div><span class="kicker">GIÁ THU MUA DỰ KIẾN</span><h2 id="brand-name"></h2></div></div><div class="carousel-shell"><button class="arrow prev" data-target="model-track" aria-label="Xem mẫu phía trước">‹</button><div class="track model-track" id="model-track"></div><button class="arrow next" data-target="model-track" aria-label="Xem mẫu tiếp theo">›</button></div><div class="dots"><i class="active"></i><i></i><i></i></div></section>
 <section class="slider-section sale-section" id="available"><div class="section-title"><div><span class="kicker">DÀNH CHO NGƯỜI MUỐN MUA</span><h2>Đồng hồ đang có sẵn</h2></div></div>
 <div class="carousel-shell"><button class="arrow prev" data-target="sale-track" aria-label="Xem sản phẩm phía trước">‹</button><div class="track sale-track" id="sale-track"></div><button class="arrow next" data-target="sale-track" aria-label="Xem sản phẩm tiếp theo">›</button></div><div class="dots"><i class="active"></i><i></i><i></i></div></section>
 <section class="consign" id="consign"><span class="kicker">DỊCH VỤ BÁN HỘ</span><h2>Anh giữ quyền sở hữu.<br>REWATCH tìm người mua.</h2><p>Chúng tôi hỗ trợ chụp ảnh, đăng sản phẩm, tư vấn khách và hoàn tất giao dịch. Phí được thỏa thuận rõ trước khi đăng bán.</p><a href="#contact">Gửi yêu cầu bán hộ</a></section></main>
 <footer id="contact"><a class="logo footer-logo" href="#top"><strong>RE</strong>WATCH</a><div><span class="kicker">LIÊN HỆ NHANH</span><h2>Gửi ảnh đồng hồ để được báo giá.</h2></div><div class="contacts"><a href="#">Zalo</a><a href="#">LINE</a><a href="#">Facebook</a></div><p>© 2026 REWATCH · Giá hiển thị có dấu ~ là giá dự kiến và có thể thay đổi theo thị trường.</p></footer>
-<dialog id="price-dialog"><button class="close" aria-label="Đóng">×</button><img id="dialog-image" alt=""><div class="dialog-copy"><span class="kicker" id="dialog-label"></span><h2 id="dialog-name"></h2><p id="dialog-ref"></p><div id="dialog-prices"></div><small id="dialog-note"></small><a href="#contact" class="primary">Liên hệ REWATCH</a></div></dialog>
+<dialog id="price-dialog"><button class="close" aria-label="Đóng">×</button><img id="dialog-image" alt=""><div class="dialog-copy"><span class="kicker" id="dialog-label"></span><h2 id="dialog-name"></h2><p id="dialog-ref"></p><div id="dialog-prices"></div><small id="dialog-note"></small><div class="dialog-contact">
+  <p class="dialog-contact-title">
+    Liên hệ nhanh để bán đồng hồ
+  </p>
+
+  <div class="dialog-contact-buttons">
+    <a
+      id="dialog-zalo"
+      href="#"
+      target="_blank"
+      rel="noopener"
+    >
+      Zalo
+    </a>
+
+    <a
+      id="dialog-line"
+      href="#"
+      target="_blank"
+      rel="noopener"
+    >
+      LINE
+    </a>
+
+    <a
+      id="dialog-facebook"
+      href="#"
+      target="_blank"
+      rel="noopener"
+    >
+      Facebook
+    </a>
+  </div>
+
+  <button
+    id="sell-request-button"
+    class="primary"
+    type="button"
+  >
+    Gửi thông tin và ảnh
+  </button>
+</div></div></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="app.js"></script></body></html>

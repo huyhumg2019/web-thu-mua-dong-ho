@@ -42,8 +42,11 @@ supabasePublicClient
         image = images.submariner;
       }
 
-      return {
+         return {
         name: `${watch.brand} ${watch.family} ${watch.model}`,
+        brand: watch.brand,
+        family: watch.family,
+        model: watch.model,
         ref: watch.reference,
         image,
         n: Number(watch.new_price_million_vnd),
@@ -149,12 +152,244 @@ supabasePublicClient
       </p>
     `;
   });
-function showBrand(b){document.getElementById('buy').hidden=true;const area=document.getElementById('brand-models');area.hidden=false;document.getElementById('brand-name').textContent=b.name;const track=document.getElementById('model-track');track.innerHTML='';buyModels[b.slug].forEach(p=>{const el=document.createElement('button');el.className='watch-card';el.innerHTML=`<img src="${p.image}" alt="${p.name}"><h3>${p.name}</h3><p>Reference: ${p.ref}</p><div class="two-prices"><span>Hàng mới <b>${p.n?'~'+vnd(p.n):'Liên hệ'}</b></span><span>Hàng đã dùng <b>${p.u?'~'+vnd(p.u):'Liên hệ'}</b></span></div>`;el.onclick=()=>openDialog(p,'buy');track.appendChild(el)});area.scrollIntoView({behavior:'smooth'})}
-document.getElementById('brand-back').onclick=()=>{document.getElementById('brand-models').hidden=true;document.getElementById('buy').hidden=false;document.getElementById('buy').scrollIntoView({behavior:'smooth'})};
+let selectedBuyBrand = null;
+let showingBuyReferences = false;
+
+function normalizeText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function showBrand(brand) {
+  selectedBuyBrand = brand;
+  showingBuyReferences = false;
+
+  document.getElementById("buy").hidden = true;
+
+  const area = document.getElementById("brand-models");
+  const track = document.getElementById("model-track");
+
+  area.hidden = false;
+
+  document.getElementById("brand-name").textContent =
+    brand.name;
+
+  track.innerHTML = "";
+
+  buyModels[brand.slug].forEach((family) => {
+    const card = document.createElement("button");
+
+    card.className = "watch-card family-card";
+
+    card.innerHTML = `
+      <img
+        src="${family.image}"
+        alt="${family.name}"
+        loading="lazy"
+      >
+
+      <h3>${family.name}</h3>
+
+      <p>Xem các mẫu và giá thu mua →</p>
+    `;
+
+    card.addEventListener("click", () => {
+      showFamilyReferences(brand, family);
+    });
+
+    track.appendChild(card);
+  });
+
+  area.scrollIntoView({
+    behavior: "smooth",
+  });
+}
+
+function showFamilyReferences(brand, family) {
+  showingBuyReferences = true;
+
+  const track = document.getElementById("model-track");
+
+  document.getElementById("brand-name").textContent =
+    `${brand.name} ${family.name}`;
+
+  track.innerHTML = "";
+
+  if (!csvPricesLoaded) {
+    const loadingMessage = document.createElement("p");
+
+    loadingMessage.className = "loading-products";
+    loadingMessage.textContent =
+      "Dữ liệu giá đang tải. Vui lòng thử lại.";
+
+    track.appendChild(loadingMessage);
+    return;
+  }
+
+  const matchingWatches = csvPrices.filter((watch) => {
+    return (
+      normalizeText(watch.brand) ===
+        normalizeText(brand.name) &&
+      normalizeText(watch.family) ===
+        normalizeText(family.name)
+    );
+  });
+
+  if (matchingWatches.length === 0) {
+    const emptyMessage = document.createElement("p");
+
+    emptyMessage.className = "loading-products";
+    emptyMessage.textContent =
+      "Dòng này đang được cập nhật giá. Vui lòng liên hệ REWATCH.";
+
+    track.appendChild(emptyMessage);
+    return;
+  }
+
+  matchingWatches.forEach((watch) => {
+    const card = document.createElement("button");
+
+    card.className = "watch-card reference-card";
+
+    card.innerHTML = `
+      <img
+        src="${watch.image}"
+        alt="${watch.name}"
+        loading="lazy"
+      >
+
+      <h3>${watch.model || watch.family}</h3>
+
+      <p>Reference: ${watch.ref}</p>
+
+      <div class="two-prices">
+        <span>
+          Hàng mới
+          <b>${watch.n ? `~${vnd(watch.n)}` : "Liên hệ"}</b>
+        </span>
+
+        <span>
+          Hàng đã dùng
+          <b>${watch.u ? `~${vnd(watch.u)}` : "Liên hệ"}</b>
+        </span>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      openDialog(watch, "buy");
+    });
+
+    track.appendChild(card);
+  });
+}
+
+document
+  .getElementById("brand-back")
+  .addEventListener("click", () => {
+    if (showingBuyReferences && selectedBuyBrand) {
+      showBrand(selectedBuyBrand);
+      return;
+    }
+
+    document.getElementById("brand-models").hidden = true;
+    document.getElementById("buy").hidden = false;
+
+    document.getElementById("buy").scrollIntoView({
+      behavior: "smooth",
+    });
+  });
 document.querySelectorAll('.arrow').forEach(btn=>btn.onclick=()=>{const t=document.getElementById(btn.dataset.target);t.scrollBy({left:(btn.classList.contains('next')?1:-1)*Math.min(t.clientWidth*.82,420),behavior:'smooth'})});
-function openDialog(p,mode){document.getElementById('dialog-image').src=p.image;document.getElementById('dialog-image').alt=p.name;document.getElementById('dialog-name').textContent=p.name;document.getElementById('dialog-ref').textContent='Reference: '+p.ref;document.getElementById('dialog-label').textContent=mode==='buy'?'GIÁ THU MUA DỰ KIẾN':p.type;document.getElementById('dialog-prices').innerHTML=mode==='buy'?`<div class="price-line"><span>Hàng mới</span><b>${p.n?'~'+vnd(p.n):'Liên hệ'}</b></div><div class="price-line"><span>Hàng đã dùng</span><b>${p.u?'~'+vnd(p.u):'Liên hệ'}</b></div>`:`<div class="price-line"><span>Giá bán</span><b>${vnd(p.price)}</b></div><div class="price-line"><span>Tình trạng</span><b>${p.condition}</b></div>`;document.getElementById('dialog-note').textContent=mode==='buy'?'Giá cuối cùng phụ thuộc tình trạng, năm sản xuất, hộp, giấy tờ và phụ kiện.':'Liên hệ để kiểm tra tình trạng còn hàng và đặt lịch xem.';document.getElementById('price-dialog').showModal()}
-document.querySelector('.close').onclick=()=>document.getElementById('price-dialog').close();
-document.getElementById('price-dialog').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.close()};
+function openDialog(product, mode) {
+  const dialog = document.getElementById("price-dialog");
+
+  document.getElementById("dialog-image").src =
+    product.image;
+
+  document.getElementById("dialog-image").alt =
+    product.name;
+
+  document.getElementById("dialog-name").textContent =
+    product.name;
+
+  document.getElementById("dialog-ref").textContent =
+    `Reference: ${product.ref}`;
+
+  document.getElementById("dialog-label").textContent =
+    mode === "buy"
+      ? "GIÁ THU MUA DỰ KIẾN"
+      : product.type;
+
+  document.getElementById("dialog-prices").innerHTML =
+    mode === "buy"
+      ? `
+        <div class="price-line">
+          <span>Hàng mới</span>
+          <b>${product.n ? `~${vnd(product.n)}` : "Liên hệ"}</b>
+        </div>
+
+        <div class="price-line">
+          <span>Hàng đã dùng</span>
+          <b>${product.u ? `~${vnd(product.u)}` : "Liên hệ"}</b>
+        </div>
+      `
+      : `
+        <div class="price-line">
+          <span>Giá bán</span>
+          <b>${vnd(product.price)}</b>
+        </div>
+
+        <div class="price-line">
+          <span>Tình trạng</span>
+          <b>${product.condition}</b>
+        </div>
+      `;
+
+  document.getElementById("dialog-note").textContent =
+    mode === "buy"
+      ? "Giá cuối cùng phụ thuộc tình trạng, năm sản xuất, hộp, giấy tờ và phụ kiện."
+      : "Liên hệ để kiểm tra tình trạng còn hàng và đặt lịch xem.";
+
+  if (!dialog.open) {
+    history.pushState(
+      { rewatchPriceDialog: true },
+      "",
+      window.location.href,
+    );
+
+    dialog.showModal();
+  }
+}
+
+function closePriceDialog() {
+  const dialog = document.getElementById("price-dialog");
+
+  if (history.state?.rewatchPriceDialog) {
+    history.back();
+  } else if (dialog.open) {
+    dialog.close();
+  }
+}
+
+document
+  .querySelector(".close")
+  .addEventListener("click", closePriceDialog);
+
+document
+  .getElementById("price-dialog")
+  .addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) {
+      closePriceDialog();
+    }
+  });
+
+window.addEventListener("popstate", () => {
+  const dialog = document.getElementById("price-dialog");
+
+  if (dialog.open) {
+    dialog.close();
+  }
+});
 document.getElementById("search-form").onsubmit = (event) => {
   event.preventDefault();
 
