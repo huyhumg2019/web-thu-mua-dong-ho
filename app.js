@@ -13,9 +13,9 @@ const buyModels={rolex:[
   {name:'Day-Date',ref:'Dòng Day-Date',image:images.daydate,n:0,u:0},
   {name:'Oyster Perpetual',ref:'Dòng Oyster Perpetual',image:images.oyster,n:0,u:0},
   {name:'Yacht-Master',ref:'Dòng Yacht-Master',image:images.yacht,n:0,u:0},
-  {name:'Sea-Dweller',ref:'Dòng Sea-Dweller',image:images.sea,n:0,u:0},
+  {name:'Sea-Dweller / Deepsea',matches:['Sea-Dweller','Deepsea'],ref:'Dòng Sea-Dweller và Deepsea',image:images.sea,n:0,u:0},
   {name:'Air-King',ref:'Dòng Air-King',image:images.air,n:0,u:0},
-  {name:'Explorer',ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
+  {name:'Explorer',matches:['Explorer','Explorer II'],ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
   {name:'Sky-Dweller',ref:'Dòng Sky-Dweller',image:images.sky,n:0,u:0}
 ],patek:[{name:'Nautilus',ref:'5711/1A-010',image:images.patek,n:3500,u:3200},{name:'Aquanaut',ref:'5167A-001',image:images.patek,n:1200,u:1080}],ap:[{name:'Royal Oak',ref:'15510ST',image:images.ap,n:1200,u:1100},{name:'Royal Oak Offshore',ref:'26420SO',image:images.ap,n:780,u:690}]};
 let csvPrices = [];
@@ -476,32 +476,114 @@ window.addEventListener("popstate", () => {
     dialog.close();
   }
 });
+function normalizeReference(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function showSearchResults(watches, code) {
+  selectedBuyBrand = null;
+  showingBuyReferences = false;
+
+  document.getElementById("buy").hidden = true;
+
+  const area = document.getElementById("brand-models");
+  const track = document.getElementById("model-track");
+
+  area.hidden = false;
+  document.getElementById("brand-name").textContent =
+    `Kết quả tra cứu: ${code}`;
+
+  track.innerHTML = "";
+
+  watches.forEach((watch) => {
+    const card = document.createElement("button");
+
+    card.className = "watch-card reference-card";
+
+    card.innerHTML = `
+      <img
+        src="${watch.image}"
+        alt="${watch.name}"
+        loading="lazy"
+      >
+
+      <h3>${watch.model || watch.family}</h3>
+
+      <p>${watch.family} · Reference: ${watch.ref}</p>
+
+      <div class="two-prices">
+        <span>
+          Hàng mới
+          <b>${watch.n ? `~${vnd(watch.n)}` : "Liên hệ"}</b>
+        </span>
+
+        <span>
+          Hàng đã dùng
+          <b>${watch.u ? `~${vnd(watch.u)}` : "Liên hệ"}</b>
+        </span>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      openDialog(watch, "buy");
+    });
+
+    track.appendChild(card);
+  });
+
+  track.scrollLeft = 0;
+  area.scrollIntoView({
+    behavior: "smooth",
+  });
+}
+
 document.getElementById("search-form").onsubmit = (event) => {
   event.preventDefault();
 
-  const code = document
+  const rawCode = document
     .getElementById("reference")
     .value.trim()
     .toUpperCase();
 
+  const code = normalizeReference(rawCode);
   const message = document.getElementById("search-message");
+
+  if (!code) {
+    message.textContent = "Vui lòng nhập mã Reference.";
+    return;
+  }
 
   if (!csvPricesLoaded) {
     message.textContent = "Dữ liệu giá đang tải. Vui lòng thử lại.";
     return;
   }
 
-  const found = csvPrices.find(
-    (watch) => watch.ref.toUpperCase() === code,
+  const matchingWatches = csvPrices.filter((watch) =>
+    normalizeReference(watch.ref).startsWith(code),
   );
 
-  if (found) {
-    openDialog(found, "buy");
+  const exactMatch = matchingWatches.find(
+    (watch) => normalizeReference(watch.ref) === code,
+  );
+
+  if (exactMatch) {
+    openDialog(exactMatch, "buy");
     message.textContent = "";
-  } else {
-    message.textContent =
-      "Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.";
+    return;
   }
+
+  if (matchingWatches.length > 0) {
+    showSearchResults(matchingWatches, rawCode);
+    message.textContent =
+      `Tìm thấy ${matchingWatches.length} mẫu phù hợp.`;
+    return;
+  }
+
+  message.textContent =
+    "Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.";
 };
 const menuButton = document.querySelector(".menu");
 const mainNavigation = document.querySelector("header nav");
