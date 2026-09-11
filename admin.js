@@ -363,6 +363,56 @@ function renderPrices(rows) {
 
     actionCell.appendChild(saveButton);
     actionCell.appendChild(autoButton);
+
+    if (currentProfile?.role === "admin") {
+      const deleteButton = document.createElement("button");
+
+      deleteButton.type = "button";
+      deleteButton.className = "danger-action";
+      deleteButton.textContent = "Xóa";
+
+      deleteButton.addEventListener("click", async () => {
+        const confirmed = window.confirm(
+          "Xóa mã " + watch.reference +
+            " khỏi danh mục thu mua? " +
+            "Thao tác này không thể hoàn tác.",
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        deleteButton.disabled = true;
+        deleteButton.textContent = "Đang xóa...";
+
+        const { data, error } = await supabaseClient.rpc(
+          "delete_purchase_price",
+          {
+            p_reference: watch.reference,
+          },
+        );
+
+        if (error || data !== true) {
+          console.error(error);
+          deleteButton.disabled = false;
+          deleteButton.textContent = "Xóa";
+
+          adminMessage.textContent =
+            "Không thể xóa " + watch.reference + ".";
+
+          return;
+        }
+
+        await loadPrices();
+
+        adminMessage.textContent =
+          "Đã xóa " + watch.reference +
+          " khỏi danh mục thu mua.";
+      });
+
+      actionCell.appendChild(deleteButton);
+    }
+
     row.appendChild(actionCell);
 
     priceTableBody.appendChild(row);
