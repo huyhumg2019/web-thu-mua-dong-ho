@@ -1,0 +1,54 @@
+name: Xem trước giá và ảnh Kame
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_changes:
+        description: "Ghi giá và ảnh vào Supabase"
+        required: true
+        type: boolean
+        default: false
+      jpy_to_vnd_rate:
+        description: "Tỷ giá 1 JPY sang VND"
+        required: true
+        type: string
+      buffer_man_yen:
+        description: "Số 万円 trừ khỏi giá Kame"
+        required: true
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Dùng Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Đọc và kiểm tra dữ liệu Kame
+        env:
+          APPLY_CHANGES: ${{ inputs.apply_changes }}
+          JPY_TO_VND_RATE: ${{ inputs.jpy_to_vnd_rate }}
+          KAME_BUFFER_MAN_YEN: ${{ inputs.buffer_man_yen }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/sync-kame-prices.mjs
+
+      - name: Lưu báo cáo kiểm tra
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kame-sync-report
+          path: kame-sync-report.json
+          if-no-files-found: warn
+          retention-days: 30
