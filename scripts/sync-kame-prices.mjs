@@ -2,6 +2,8 @@ import { writeFile } from "node:fs/promises";
 
 const KAME_URL =
   "https://www.kame-kichi.com/buy/examples";
+const VIETCOMBANK_RATE_URL =
+  "https://www.vietcombank.com.vn/ExchangeRates/ExrateXML.aspx";
 
 const TARGETS = [
   { reference: "126710BLRO" },
@@ -362,22 +364,111 @@ async function uploadImage(reference, sourceUrl) {
   );
 }
 
+
+async function resolveJpyToVndRate(existingRows) {
+  const manualRate = Number(process.env.JPY_TO_VND_RATE);
+
+  if (Number.isFinite(manualRate) && manualRate > 0) {
+    return {
+      rate: manualRate,
+      source: "manual",
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  try {
+    const response = await fetch(VIETCOMBANK_RATE_URL, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/xml,text/xml;q=0.9,*/*;q=0.8",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "Vietcombank trả về HTTP " + response.status + ".",
+      );
+    }
+
+    const xml = await response.text();
+    const jpyTag = Array.from(
+      xml.matchAll(/<Exrate\b[^>]*>/gi),
+    )
+      .map((match) => match[0])
+      .find(
+        (tag) =>
+          readAttribute(tag, "CurrencyCode").toUpperCase() ===
+          "JPY",
+      );
+
+    const transferRate = Number(
+      readAttribute(jpyTag || "", "Transfer").replaceAll(
+        ",",
+        "",
+      ),
+    );
+
+    if (!Number.isFinite(transferRate) || transferRate <= 0) {
+      throw new Error(
+        "Không đọc được tỷ giá chuyển khoản JPY từ Vietcombank.",
+      );
+    }
+
+    return {
+      rate: transferRate,
+      source: "vietcombank-transfer",
+      checkedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    const previous = [...existingRows]
+      .filter(
+        (row) =>
+          Number.isFinite(
+            Number(row.source_exchange_rate_jpy_vnd),
+          ) &&
+          Number(row.source_exchange_rate_jpy_vnd) > 0,
+      )
+      .sort(
+        (first, second) =>
+          new Date(
+            second.source_exchange_rate_checked_at || 0,
+          ) -
+          new Date(
+            first.source_exchange_rate_checked_at || 0,
+          ),
+      )[0];
+
+    if (previous) {
+      console.warn(
+        "Không lấy được tỷ giá mới: " + error.message +
+          " Dùng tỷ giá gần nhất " +
+          previous.source_exchange_rate_jpy_vnd + ".",
+      );
+
+      return {
+        rate: Number(
+          previous.source_exchange_rate_jpy_vnd,
+        ),
+        source: "last-successful-rate",
+        checkedAt:
+          previous.source_exchange_rate_checked_at ||
+          new Date().toISOString(),
+      };
+    }
+
+    throw new Error(
+      "Không lấy được tỷ giá JPY/VND và chưa có tỷ giá dự phòng: " +
+        error.message,
+    );
+  }
+}
+
 async function main() {
   const applyChanges =
     process.env.APPLY_CHANGES === "true";
-  const jpyToVnd = Number(process.env.JPY_TO_VND_RATE);
   const bufferManYen = Number(
     process.env.KAME_BUFFER_MAN_YEN || "20",
   );
-
-  if (
-    !Number.isFinite(jpyToVnd) ||
-    jpyToVnd <= 0
-  ) {
-    throw new Error(
-      "JPY_TO_VND_RATE phải là tỷ giá hợp lệ, ví dụ 170.",
-    );
-  }
 
   if (
     !Number.isFinite(bufferManYen) ||
@@ -420,10 +511,17 @@ async function main() {
           "?select=reference,price_mode," +
           "auto_new_price_million_vnd," +
           "auto_used_price_million_vnd," +
-          "source_last_success_at" +
+          "source_last_success_at," +
+          "source_exchange_rate_jpy_vnd," +
+          "source_exchange_rate_checked_at" +
           "&brand=eq.Rolex&active=eq.true",
       )) || [];
   }
+
+  const exchangeRate = await resolveJpyToVndRate(
+    existingRows,
+  );
+  const jpyToVnd = exchangeRate.rate;
 
   const existingByReference = new Map(
     existingRows.map((row) => [
@@ -533,6 +631,10 @@ async function main() {
           listing.usedPriceManYen,
         source_variant: listing.variant,
         source_image_url: sourceImageUrl || null,
+        source_exchange_rate_jpy_vnd: jpyToVnd,
+        source_exchange_rate_source: exchangeRate.source,
+        source_exchange_rate_checked_at:
+          exchangeRate.checkedAt,
         auto_calculated_at: now,
       };
 
@@ -584,6 +686,8 @@ async function main() {
     source: KAME_URL,
     applyChanges,
     jpyToVnd,
+    exchangeRateSource: exchangeRate.source,
+    exchangeRateCheckedAt: exchangeRate.checkedAt,
     bufferManYen,
     parsedListings: listings.length,
     matchedTargets: matched,
