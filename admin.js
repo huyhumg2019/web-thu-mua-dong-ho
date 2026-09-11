@@ -153,10 +153,33 @@ function createPriceInput(value, label) {
   input.type = "number";
   input.min = "0";
   input.step = "1";
-  input.value = value ?? 0;
+  input.value = value ?? "";
+  input.placeholder = "Chưa đặt";
   input.setAttribute("aria-label", label);
 
   return input;
+}
+
+function formatPurchasePrice(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return "Liên hệ";
+  }
+
+  return `${number.toLocaleString("vi-VN")} triệu`;
+}
+
+function createPricePairCell(newPrice, usedPrice) {
+  const cell = document.createElement("td");
+
+  cell.className = "price-pair";
+  cell.innerHTML = `
+    <span>Hàng mới <b>${formatPurchasePrice(newPrice)}</b></span>
+    <span>Đã dùng <b>${formatPurchasePrice(usedPrice)}</b></span>
+  `;
+
+  return cell;
 }
 
 function renderPrices(rows) {
@@ -166,40 +189,111 @@ function renderPrices(rows) {
     const row = document.createElement("tr");
 
     row.appendChild(createCell(watch.reference));
-    row.appendChild(createCell(watch.brand));
-    row.appendChild(createCell(watch.family));
-    row.appendChild(createCell(watch.model));
 
-    const newPriceCell = document.createElement("td");
-    const usedPriceCell = document.createElement("td");
-    const actionCell = document.createElement("td");
+    const watchCell = document.createElement("td");
+    watchCell.className = "watch-summary";
+    watchCell.innerHTML = `
+      <b>${watch.brand || ""} ${watch.family || ""}</b>
+      <span>${watch.model || ""}</span>
+    `;
+    row.appendChild(watchCell);
+
+    const modeCell = document.createElement("td");
+    const modeSelect = document.createElement("select");
+
+    modeSelect.className = "price-mode-select";
+    modeSelect.setAttribute(
+      "aria-label",
+      `Chế độ giá ${watch.reference}`,
+    );
+    modeSelect.innerHTML = `
+      <option value="auto">Tự động</option>
+      <option value="manual">Thủ công</option>
+    `;
+    modeSelect.value = watch.price_mode || "auto";
+    modeCell.appendChild(modeSelect);
+    row.appendChild(modeCell);
+
+    row.appendChild(
+      createPricePairCell(
+        watch.auto_new_price_million_vnd,
+        watch.auto_used_price_million_vnd,
+      ),
+    );
+
+    const manualCell = document.createElement("td");
+    manualCell.className = "manual-price-inputs";
 
     const newPriceInput = createPriceInput(
-      watch.new_price_million_vnd,
-      `Giá hàng mới ${watch.reference}`,
+      watch.manual_new_price_million_vnd,
+      `Giá chỉnh tay hàng mới ${watch.reference}`,
     );
 
     const usedPriceInput = createPriceInput(
-      watch.used_price_million_vnd,
-      `Giá hàng đã dùng ${watch.reference}`,
+      watch.manual_used_price_million_vnd,
+      `Giá chỉnh tay hàng đã dùng ${watch.reference}`,
     );
+
+    const newPriceLabel = document.createElement("label");
+    newPriceLabel.textContent = "Hàng mới";
+    newPriceLabel.appendChild(newPriceInput);
+
+    const usedPriceLabel = document.createElement("label");
+    usedPriceLabel.textContent = "Đã dùng";
+    usedPriceLabel.appendChild(usedPriceInput);
+
+    manualCell.appendChild(newPriceLabel);
+    manualCell.appendChild(usedPriceLabel);
+    row.appendChild(manualCell);
+
+    row.appendChild(
+      createPricePairCell(
+        watch.new_price_million_vnd,
+        watch.used_price_million_vnd,
+      ),
+    );
+
+    const actionCell = document.createElement("td");
+    actionCell.className = "price-actions";
 
     const saveButton = document.createElement("button");
     saveButton.type = "button";
-    saveButton.textContent = "Lưu giá";
+    saveButton.textContent = "Lưu";
+
+    const autoButton = document.createElement("button");
+    autoButton.type = "button";
+    autoButton.className = "secondary-action";
+    autoButton.textContent = "Dùng tự động";
+
+    function updateManualInputs() {
+      const isManual = modeSelect.value === "manual";
+
+      newPriceInput.disabled = !isManual;
+      usedPriceInput.disabled = !isManual;
+      autoButton.hidden = !isManual;
+    }
+
+    modeSelect.addEventListener("change", updateManualInputs);
+    updateManualInputs();
 
     saveButton.addEventListener("click", async () => {
+      const isManual = modeSelect.value === "manual";
       const newPrice = Number(newPriceInput.value);
       const usedPrice = Number(usedPriceInput.value);
 
       if (
-        !Number.isFinite(newPrice) ||
-        !Number.isFinite(usedPrice) ||
-        newPrice < 0 ||
-        usedPrice < 0
+        isManual &&
+        (
+          newPriceInput.value === "" ||
+          usedPriceInput.value === "" ||
+          !Number.isFinite(newPrice) ||
+          !Number.isFinite(usedPrice) ||
+          newPrice < 0 ||
+          usedPrice < 0
+        )
       ) {
         adminMessage.textContent =
-          "Giá phải là số lớn hơn hoặc bằng 0.";
+          "Chế độ thủ công cần nhập đủ hai mức giá, từ 0 trở lên.";
 
         return;
       }
@@ -207,17 +301,22 @@ function renderPrices(rows) {
       saveButton.disabled = true;
       saveButton.textContent = "Đang lưu...";
 
+      const changes = {
+        price_mode: modeSelect.value,
+      };
+
+      if (isManual) {
+        changes.manual_new_price_million_vnd = newPrice;
+        changes.manual_used_price_million_vnd = usedPrice;
+      }
+
       const { error } = await supabaseClient
         .from("purchase_prices")
-        .update({
-          new_price_million_vnd: newPrice,
-          used_price_million_vnd: usedPrice,
-          updated_at: new Date().toISOString(),
-        })
+        .update(changes)
         .eq("reference", watch.reference);
 
       saveButton.disabled = false;
-      saveButton.textContent = "Lưu giá";
+      saveButton.textContent = "Lưu";
 
       if (error) {
         console.error(error);
@@ -228,19 +327,42 @@ function renderPrices(rows) {
         return;
       }
 
-      watch.new_price_million_vnd = newPrice;
-      watch.used_price_million_vnd = usedPrice;
+      await loadPrices();
 
       adminMessage.textContent =
         `Đã cập nhật giá ${watch.reference}.`;
     });
 
-    newPriceCell.appendChild(newPriceInput);
-    usedPriceCell.appendChild(usedPriceInput);
-    actionCell.appendChild(saveButton);
+    autoButton.addEventListener("click", async () => {
+      autoButton.disabled = true;
+      autoButton.textContent = "Đang chuyển...";
 
-    row.appendChild(newPriceCell);
-    row.appendChild(usedPriceCell);
+      const { error } = await supabaseClient
+        .from("purchase_prices")
+        .update({
+          price_mode: "auto",
+        })
+        .eq("reference", watch.reference);
+
+      if (error) {
+        console.error(error);
+        autoButton.disabled = false;
+        autoButton.textContent = "Dùng tự động";
+
+        adminMessage.textContent =
+          `Không thể đổi ${watch.reference} về giá tự động.`;
+
+        return;
+      }
+
+      await loadPrices();
+
+      adminMessage.textContent =
+        `${watch.reference} đang dùng giá tự động.`;
+    });
+
+    actionCell.appendChild(saveButton);
+    actionCell.appendChild(autoButton);
     row.appendChild(actionCell);
 
     priceTableBody.appendChild(row);
