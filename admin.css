@@ -398,3 +398,84 @@
     flex-direction: column;
   }
 }
+
+
+/* ===== CHẾ ĐỘ GIÁ THU MUA ===== */
+
+.watch-summary,
+.price-pair,
+.manual-price-inputs,
+.price-actions {
+  vertical-align: top;
+}
+
+.watch-summary b,
+.watch-summary span,
+.price-pair span,
+.manual-price-inputs label {
+  display: block;
+}
+
+.watch-summary span {
+  margin-top: 5px;
+  color: var(--grey);
+  font-size: 12px;
+}
+
+.price-pair span + span {
+  margin-top: 8px;
+}
+
+.price-pair b {
+  display: block;
+  margin-top: 3px;
+  color: var(--red);
+  white-space: nowrap;
+}
+
+.price-mode-select {
+  min-width: 110px;
+  height: 40px;
+  padding: 0 9px;
+  border: 1px solid #bbb;
+  background: #fff;
+}
+
+.manual-price-inputs label {
+  color: var(--grey);
+  font-size: 11px;
+}
+
+.manual-price-inputs label + label {
+  margin-top: 8px;
+}
+
+.manual-price-inputs input {
+  display: block;
+  margin-top: 4px;
+}
+
+.manual-price-inputs input:disabled {
+  background: #f2f2f0;
+  color: #999;
+}
+
+.price-actions {
+  min-width: 135px;
+}
+
+.price-actions button {
+  width: 100%;
+}
+
+.price-actions .secondary-action {
+  margin-top: 8px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+}
+
+.price-actions .secondary-action:hover {
+  border-color: var(--red);
+  color: #fff;
+}
