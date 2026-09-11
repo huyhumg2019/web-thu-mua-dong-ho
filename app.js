@@ -3,11 +3,12 @@ const supabasePublicClient = supabase.createClient(
   window.REWATCH_SUPABASE.publishableKey,
 );
 const images={rolex:'https://image.springnews.co.th/uploads/images/contents/w1024/2022/07/vCpMD13KYV4fssoRzOkc.webp?x-image-process=style%2Flg-webp',patek:'https://manufaktura-watches.ru/upload/resize_cache/iblock/200/739_1000_1/ekjgfrjcqndntebfe3imknvrbjio2xkm.jpg',ap:'https://verdaci.com/cdn/shop/products/apwhite.jpg?v=1678961381',pepsi:'https://firstclasstimepieces.com/cdn/shop/products/rolex-gmt-master-ii-pepsi-40mm-126710blro-black-dial-first-class-timepieces_1080x.jpg?v=1589439358',daytona:'https://greenwichtimecdm.com/cdn/shop/files/CosmographDaytona116520SteelWhiteDial40mm.png?v=1755039601&width=3840',datejust:'https://www.watchesofswitzerland.com/cdn/shop/files/m126334-0001.avif?v=6277866648194590207',submariner:'https://opis-cdn.tinkoffjournal.ru/mercury/03-divers-licence.png',daydate:'https://media.gq-magazine.co.uk/photos/69a1955d0960f39b26d021c0/master/w_1600%2Cc_limit/2702-Suit-Watches-9.jpg',oyster:'https://www.marcolino.pt/content/images/2025/watch_assets/upright_watches_assets/mobile/upright_m124200-0011.webp?v=1776682922',yacht:'https://delugs.com/cdn/shop/files/Rolex_-_Yacht-Master_40_-_126622-0001_-_PRO_690x690_crop_center.jpg?v=1713947717',sea:'https://www.robertgatwardjewellers.co.uk/cdn/shop/files/v7-m126600-0002_watch-assets-upright_landscape.webp?v=1746087673',air:'https://touchofgold.ca/cdn/shop/files/mobile_m126900-0001_drp-upright-bba-with-shadow_800x800_crop_center.webp?v=1738209079',explorer:'https://cdn.prod.website-files.com/64c794410a6c56562470f505/656024300aa08c8d4e44c6f9_124270-0001.png',sky:'https://www.aviandco.com/media/catalog/product/cache/ec2e76e256f4e9d4c0d7c929c318f728/r/o/rolex_sky_dweller_326934_white_index-1_4.jpg'};
-const brands=[{name:'Rolex',slug:'rolex',count:'10 dòng',image:images.rolex,copy:'Datejust · GMT-Master II · Submariner'},{name:'Patek Philippe',slug:'patek',count:'4 dòng',image:images.patek,copy:'Nautilus · Aquanaut · Calatrava'},{name:'Audemars Piguet',slug:'ap',count:'3 dòng',image:images.ap,copy:'Royal Oak · Offshore · Code 11.59'}];
+const brands=[{name:'Rolex',slug:'rolex',count:'11 dòng',image:images.rolex,copy:'Datejust · GMT-Master II · Submariner'},{name:'Patek Philippe',slug:'patek',count:'4 dòng',image:images.patek,copy:'Nautilus · Aquanaut · Calatrava'},{name:'Audemars Piguet',slug:'ap',count:'3 dòng',image:images.ap,copy:'Royal Oak · Offshore · Code 11.59'}];
 // Dữ liệu giá mẫu: chỉ cần sửa n (hàng mới) và u (hàng đã dùng), đơn vị triệu VND.
 const buyModels={rolex:[
   {name:'Datejust',ref:'Dòng Datejust',image:images.datejust,n:0,u:0},
-  {name:'Submariner',ref:'Dòng Submariner',image:images.submariner,n:0,u:0},
+  {name:'Submariner',matches:['Submariner','Submariner Date'],ref:'Dòng Submariner',image:images.submariner,n:0,u:0},
+  {name:'Cosmograph Daytona',matches:['Cosmograph Daytona'],ref:'Dòng Cosmograph Daytona',image:images.daytona,n:0,u:0},
   {name:'GMT-Master II',ref:'Dòng GMT-Master II',image:images.pepsi,n:0,u:0},
   {name:'Day-Date',ref:'Dòng Day-Date',image:images.daydate,n:0,u:0},
   {name:'Oyster Perpetual',ref:'Dòng Oyster Perpetual',image:images.oyster,n:0,u:0},
@@ -231,8 +232,11 @@ function showFamilyReferences(brand, family) {
     return (
       normalizeText(watch.brand) ===
         normalizeText(brand.name) &&
-      normalizeText(watch.family) ===
-        normalizeText(family.name)
+      (family.matches || [family.name]).some(
+        (familyName) =>
+          normalizeText(watch.family) ===
+          normalizeText(familyName),
+      )
     );
   });
 
