@@ -1,6 +1,10 @@
 name: Xem trước giá và ảnh Kame
 
 on:
+  schedule:
+    # 10:00 sáng mỗi ngày theo giờ Nhật (UTC+9).
+    - cron: "0 1 * * *"
+
   pull_request:
     branches:
       - main
@@ -16,9 +20,10 @@ on:
         type: boolean
         default: false
       jpy_to_vnd_rate:
-        description: "Tỷ giá 1 JPY sang VND"
-        required: true
+        description: "Tỷ giá 1 JPY sang VND (để trống để lấy tự động)"
+        required: false
         type: string
+        default: ""
       buffer_man_yen:
         description: "Số 万円 trừ khỏi giá Kame"
         required: true
@@ -56,6 +61,16 @@ jobs:
           APPLY_CHANGES: ${{ inputs.apply_changes }}
           JPY_TO_VND_RATE: ${{ inputs.jpy_to_vnd_rate }}
           KAME_BUFFER_MAN_YEN: ${{ inputs.buffer_man_yen }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/sync-kame-prices.mjs
+
+      - name: Đồng bộ tự động mỗi ngày
+        if: github.event_name == 'schedule'
+        env:
+          APPLY_CHANGES: "true"
+          JPY_TO_VND_RATE: ""
+          KAME_BUFFER_MAN_YEN: "20"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/sync-kame-prices.mjs
