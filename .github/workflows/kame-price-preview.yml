@@ -1,6 +1,13 @@
 name: Xem trước giá và ảnh Kame
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/sync-kame-prices.mjs"
+      - ".github/workflows/kame-price-preview.yml"
+
   workflow_dispatch:
     inputs:
       apply_changes:
@@ -35,7 +42,16 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Đọc và kiểm tra dữ liệu Kame
+      - name: Kiểm tra bộ đọc Kame trên Pull Request
+        if: github.event_name == 'pull_request'
+        env:
+          APPLY_CHANGES: "false"
+          JPY_TO_VND_RATE: "1"
+          KAME_BUFFER_MAN_YEN: "20"
+        run: node scripts/sync-kame-prices.mjs
+
+      - name: Xem trước hoặc đồng bộ thủ công
+        if: github.event_name == 'workflow_dispatch'
         env:
           APPLY_CHANGES: ${{ inputs.apply_changes }}
           JPY_TO_VND_RATE: ${{ inputs.jpy_to_vnd_rate }}
