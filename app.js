@@ -24,7 +24,7 @@ let csvPricesLoaded = false;
 supabasePublicClient
   .from("purchase_prices")
   .select(
-    "reference, brand, family, model, new_price_million_vnd, used_price_million_vnd, updated_at",
+    "reference, brand, family, model, new_price_million_vnd, used_price_million_vnd, image_url, updated_at",
   )
   .eq("active", true)
   .then(({ data, error }) => {
@@ -49,7 +49,7 @@ supabasePublicClient
         family: watch.family,
         model: watch.model,
         ref: watch.reference,
-        image,
+        image: watch.image_url || image,
         n: Number(watch.new_price_million_vnd),
         u: Number(watch.used_price_million_vnd),
         updatedAt: watch.updated_at,
