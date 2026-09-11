@@ -13,9 +13,9 @@ const buyModels={rolex:[
   {name:'Day-Date',ref:'Dòng Day-Date',image:images.daydate,n:0,u:0},
   {name:'Oyster Perpetual',ref:'Dòng Oyster Perpetual',image:images.oyster,n:0,u:0},
   {name:'Yacht-Master',ref:'Dòng Yacht-Master',image:images.yacht,n:0,u:0},
-  {name:'Sea-Dweller',ref:'Dòng Sea-Dweller',image:images.sea,n:0,u:0},
+  {name:'Sea-Dweller / Deepsea',matches:['Sea-Dweller','Deepsea'],ref:'Dòng Sea-Dweller và Deepsea',image:images.sea,n:0,u:0},
   {name:'Air-King',ref:'Dòng Air-King',image:images.air,n:0,u:0},
-  {name:'Explorer',ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
+  {name:'Explorer',matches:['Explorer','Explorer II'],ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
   {name:'Sky-Dweller',ref:'Dòng Sky-Dweller',image:images.sky,n:0,u:0}
 ],patek:[{name:'Nautilus',ref:'5711/1A-010',image:images.patek,n:3500,u:3200},{name:'Aquanaut',ref:'5167A-001',image:images.patek,n:1200,u:1080}],ap:[{name:'Royal Oak',ref:'15510ST',image:images.ap,n:1200,u:1100},{name:'Royal Oak Offshore',ref:'26420SO',image:images.ap,n:780,u:690}]};
 let csvPrices = [];
