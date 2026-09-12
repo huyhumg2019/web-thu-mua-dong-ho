@@ -2,8 +2,9 @@ import { writeFile } from "node:fs/promises";
 
 const KAME_URL =
   "https://www.kame-kichi.com/buy/examples";
-const VIETCOMBANK_RATE_URL =
-  "https://www.vietcombank.com.vn/ExchangeRates/ExrateXML.aspx";
+const SENDMONEY_RATE_URL =
+  "https://sendmoney.co.jp/vi/fx-rate";
+const SENDMONEY_RATE_MARGIN_VND = 2;
 
 const TARGETS = [
   { reference: "126710BLRO" },
@@ -406,46 +407,46 @@ async function resolveJpyToVndRate(existingRows) {
   }
 
   try {
-    const response = await fetch(VIETCOMBANK_RATE_URL, {
+    const response = await fetch(SENDMONEY_RATE_URL, {
       headers: {
         "User-Agent": USER_AGENT,
-        Accept: "application/xml,text/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "vi,en;q=0.8",
+        Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
       },
     });
 
     if (!response.ok) {
       throw new Error(
-        "Vietcombank trả về HTTP " + response.status + ".",
+        "SendMoney trả về HTTP " + response.status + ".",
       );
     }
 
-    const xml = await response.text();
-    const jpyTag = Array.from(
-      xml.matchAll(/<Exrate\b[^>]*>/gi),
-    )
-      .map((match) => match[0])
-      .find(
-        (tag) =>
-          readAttribute(tag, "CurrencyCode").toUpperCase() ===
-          "JPY",
-      );
-
-    const transferRate = Number(
-      readAttribute(jpyTag || "", "Transfer").replaceAll(
-        ",",
-        "",
-      ),
+    const html = await response.text();
+    const pageText = htmlToText(html);
+    const rateMatch = pageText.match(
+      /Viet Nam Dong\s*\(VND\)\s*VND\s*([0-9]+(?:[.,][0-9]+)?)/i,
+    );
+    const listedRate = Number(
+      String(rateMatch?.[1] || "").replace(",", "."),
     );
 
-    if (!Number.isFinite(transferRate) || transferRate <= 0) {
+    if (!Number.isFinite(listedRate) || listedRate <= 0) {
       throw new Error(
-        "Không đọc được tỷ giá chuyển khoản JPY từ Vietcombank.",
+        "Không đọc được tỷ giá JPY/VND từ SendMoney.",
       );
     }
 
+    const adjustedRate =
+      listedRate + SENDMONEY_RATE_MARGIN_VND;
+
+    console.log(
+      `Tỷ giá SendMoney: ${listedRate} + ` +
+        `${SENDMONEY_RATE_MARGIN_VND} = ${adjustedRate} VND/JPY.`,
+    );
+
     return {
-      rate: transferRate,
-      source: "vietcombank-transfer",
+      rate: adjustedRate,
+      source: "sendmoney-vnd-plus-2",
       checkedAt: new Date().toISOString(),
     };
   } catch (error) {
