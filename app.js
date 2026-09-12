@@ -22,11 +22,12 @@ let csvPrices = [];
 let csvPricesLoaded = false;
 
 supabasePublicClient
-  .from("purchase_prices")
+  .from("purchase_catalog_variants")
   .select(
-    "reference, brand, family, model, new_price_million_vnd, used_price_million_vnd, image_url, updated_at",
+    "variant_id, reference, brand, family, model, variant_key, variant_label, bracelet, dial, display_order, new_price_million_vnd, used_price_million_vnd, image_url, updated_at",
   )
-  .eq("active", true)
+  .order("reference")
+  .order("display_order")
   .then(({ data, error }) => {
     if (error) {
       throw error;
@@ -49,6 +50,12 @@ supabasePublicClient
         family: watch.family,
         model: watch.model,
         ref: watch.reference,
+        variantId: watch.variant_id,
+        variantKey: watch.variant_key,
+        variantLabel: watch.variant_label || watch.bracelet || watch.dial || "Tiêu chuẩn",
+        bracelet: watch.bracelet,
+        dial: watch.dial,
+        displayOrder: Number(watch.display_order || 0),
         image: watch.image_url || image,
         n: Number(watch.new_price_million_vnd),
         u: Number(watch.used_price_million_vnd),
@@ -216,6 +223,7 @@ function showFamilyReferences(brand, family) {
     `${brand.name} ${family.name}`;
 
   track.innerHTML = "";
+  track.classList.remove("variant-results");
 
   if (!csvPricesLoaded) {
     const loadingMessage = document.createElement("p");
@@ -251,6 +259,12 @@ function showFamilyReferences(brand, family) {
     return;
   }
 
+  matchingWatches.sort((a, b) =>
+    a.ref.localeCompare(b.ref) ||
+    a.displayOrder - b.displayOrder
+  );
+  track.classList.add("variant-results");
+
   matchingWatches.forEach((watch) => {
     const card = document.createElement("button");
 
@@ -263,8 +277,8 @@ function showFamilyReferences(brand, family) {
         loading="lazy"
       >
 
-      <h3>${watch.model || watch.family}</h3>
-
+      <h3>${watch.variantLabel}</h3>
+      <p>${watch.model || watch.family}</p>
       <p>Reference: ${watch.ref}</p>
 
       <div class="two-prices">
@@ -392,7 +406,7 @@ function openDialog(product, mode) {
     product.name;
 
   document.getElementById("dialog-ref").textContent =
-    `Reference: ${product.ref}`;
+    `${product.variantLabel ? `${product.variantLabel} · ` : ""}Reference: ${product.ref}`;
 
   document.getElementById("dialog-label").textContent =
     mode === "buy"
@@ -497,8 +511,11 @@ function showSearchResults(watches, code) {
     `Kết quả tra cứu: ${code}`;
 
   track.innerHTML = "";
+  track.classList.add("variant-results");
 
-  watches.forEach((watch) => {
+  watches
+    .sort((a, b) => a.ref.localeCompare(b.ref) || a.displayOrder - b.displayOrder)
+    .forEach((watch) => {
     const card = document.createElement("button");
 
     card.className = "watch-card reference-card";
@@ -510,9 +527,9 @@ function showSearchResults(watches, code) {
         loading="lazy"
       >
 
-      <h3>${watch.model || watch.family}</h3>
-
-      <p>${watch.family} · Reference: ${watch.ref}</p>
+      <h3>${watch.variantLabel}</h3>
+      <p>${watch.family} · ${watch.model || ""}</p>
+      <p>Reference: ${watch.ref}</p>
 
       <div class="two-prices">
         <span>
@@ -565,13 +582,20 @@ document.getElementById("search-form").onsubmit = (event) => {
     normalizeReference(watch.ref).startsWith(code),
   );
 
-  const exactMatch = matchingWatches.find(
+  const exactMatches = matchingWatches.filter(
     (watch) => normalizeReference(watch.ref) === code,
   );
 
-  if (exactMatch) {
-    openDialog(exactMatch, "buy");
+  if (exactMatches.length === 1) {
+    openDialog(exactMatches[0], "buy");
     message.textContent = "";
+    return;
+  }
+
+  if (exactMatches.length > 1) {
+    showSearchResults(exactMatches, rawCode);
+    message.textContent =
+      `Tìm thấy ${exactMatches.length} phiên bản cùng mã để anh so sánh.`;
     return;
   }
 
@@ -1059,3 +1083,13 @@ async function updateAccountNavigation() {
 }
 
 updateAccountNavigation();
+
+/* Chuyển riêng giữa khu thu mua và khu hàng có sẵn */
+document.querySelectorAll("[data-catalog-mode]").forEach((link) => {
+  link.addEventListener("click", () => {
+    const isPurchase = link.dataset.catalogMode === "purchase";
+    document.getElementById("buy").hidden = !isPurchase;
+    document.getElementById("available").hidden = isPurchase;
+    document.getElementById("brand-models").hidden = true;
+  });
+});
