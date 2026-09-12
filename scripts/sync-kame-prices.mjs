@@ -564,12 +564,61 @@ async function main() {
   for (const target of TARGETS) {
     const sourceReference =
       target.sourceReference || target.reference;
+    const current =
+      existingByReference.get(target.reference);
     const listing = chooseListing(listings, target);
 
     if (!listing) {
+      let status = "not-found";
+      const sourceStillAvailable = listings.some(
+        (candidate) =>
+          candidate.reference === sourceReference &&
+          (target.dialKeywords || []).every(
+            (keyword) =>
+              candidate.variant.includes(keyword),
+          ),
+      );
+
+      if (
+        applyChanges &&
+        current?.price_mode !== "manual"
+      ) {
+        if (target.variantKey && sourceStillAvailable) {
+          await supabaseRequest(
+            "/rest/v1/purchase_price_variants" +
+              `?reference=eq.${encodeURIComponent(target.reference)}` +
+              `&variant_key=eq.${encodeURIComponent(target.variantKey)}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ active: false }),
+            },
+          );
+          status = "hidden-missing-variant";
+        } else if (!sourceStillAvailable) {
+          await supabaseRequest(
+            "/rest/v1/purchase_prices" +
+              `?reference=eq.${encodeURIComponent(target.reference)}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ active: false }),
+            },
+          );
+          status = "hidden-missing-from-kame";
+        }
+      }
+
       report.push({
         reference: target.reference,
-        status: "not-found",
+        variantKey: target.variantKey || "default",
+        status,
       });
       continue;
     }
@@ -593,8 +642,6 @@ async function main() {
       jpyToVnd,
     );
 
-    const current =
-      existingByReference.get(target.reference);
     const hasHistory =
       !target.variantKey &&
       Boolean(current?.source_last_success_at);
@@ -651,6 +698,7 @@ async function main() {
 
       const now = new Date().toISOString();
       const changes = {
+        active: true,
         auto_new_price_million_vnd: autoNewPrice,
         price_source: "kame-kichi",
         source_url: KAME_URL,
