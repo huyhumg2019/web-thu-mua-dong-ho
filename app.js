@@ -24,7 +24,7 @@ let csvPricesLoaded = false;
 supabasePublicClient
   .from("purchase_catalog_variants")
   .select(
-    "variant_id, reference, brand, family, model, variant_key, variant_label, bracelet, dial, display_order, new_price_million_vnd, used_price_million_vnd, image_url, updated_at",
+    "variant_id, reference, brand, family, model, variant_key, variant_label, bracelet, dial, display_order, new_price_million_vnd, used_price_million_vnd, image_url, updated_at, nickname",
   )
   .order("reference")
   .order("display_order")
@@ -49,6 +49,7 @@ supabasePublicClient
         brand: watch.brand,
         family: watch.family,
         model: watch.model,
+        nickname: watch.nickname,
         ref: watch.reference,
         variantId: watch.variant_id,
         variantKey: watch.variant_key,
@@ -277,7 +278,7 @@ function showFamilyReferences(brand, family) {
         loading="lazy"
       >
 
-      <h3>${watch.family} · ${watch.model || ""}</h3>
+      <h3>${watch.family} · ${watch.nickname || watch.model || ""}</h3>
       <p>Reference: ${watch.ref}</p>
       <p class="variant-name">${watch.variantLabel}</p>
 
@@ -527,7 +528,7 @@ function showSearchResults(watches, code) {
         loading="lazy"
       >
 
-      <h3>${watch.family} · ${watch.model || ""}</h3>
+      <h3>${watch.family} · ${watch.nickname || watch.model || ""}</h3>
       <p>Reference: ${watch.ref}</p>
       <p class="variant-name">${watch.variantLabel}</p>
 
