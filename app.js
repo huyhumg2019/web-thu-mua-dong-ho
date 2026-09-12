@@ -277,9 +277,9 @@ function showFamilyReferences(brand, family) {
         loading="lazy"
       >
 
-      <h3>${watch.variantLabel}</h3>
-      <p>${watch.model || watch.family}</p>
+      <h3>${watch.family} · ${watch.model || ""}</h3>
       <p>Reference: ${watch.ref}</p>
+      <p class="variant-name">${watch.variantLabel}</p>
 
       <div class="two-prices">
         <span>
@@ -527,9 +527,9 @@ function showSearchResults(watches, code) {
         loading="lazy"
       >
 
-      <h3>${watch.variantLabel}</h3>
-      <p>${watch.family} · ${watch.model || ""}</p>
+      <h3>${watch.family} · ${watch.model || ""}</h3>
       <p>Reference: ${watch.ref}</p>
+      <p class="variant-name">${watch.variantLabel}</p>
 
       <div class="two-prices">
         <span>

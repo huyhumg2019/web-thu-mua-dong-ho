@@ -317,3 +317,9 @@
     display:block;
   }
 }
+
+.reference-card .variant-name{
+  margin-top:8px;
+  color:var(--ink);
+  font-weight:600;
+}
