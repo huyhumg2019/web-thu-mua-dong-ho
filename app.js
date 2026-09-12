@@ -18,6 +18,34 @@ const buyModels={rolex:[
   {name:'Explorer',matches:['Explorer','Explorer II'],ref:'Dòng Explorer',image:images.explorer,n:0,u:0},
   {name:'Sky-Dweller',ref:'Dòng Sky-Dweller',image:images.sky,n:0,u:0}
 ],patek:[{name:'Nautilus',ref:'5711/1A-010',image:images.patek,n:3500,u:3200},{name:'Aquanaut',ref:'5167A-001',image:images.patek,n:1200,u:1080}],ap:[{name:'Royal Oak',ref:'15510ST',image:images.ap,n:1200,u:1100},{name:'Royal Oak Offshore',ref:'26420SO',image:images.ap,n:780,u:690}]};
+function localizePurchaseLabel(value) {
+  const source = String(value || "").trim();
+  const exactLabels = {
+    "ブラック": "Mặt đen",
+    "ホワイト": "Mặt trắng",
+    "ブルー": "Mặt xanh",
+    "グレー": "Mặt xám",
+    "ブラウン": "Mặt nâu",
+    "プラチナ": "Bạch kim",
+    "ゴールデン（シャンパン）": "Mặt champagne",
+    "ゴールデン(シャンパン)": "Mặt champagne",
+    "ブラック/サンダスト": "Mặt đen / Sundust",
+  };
+
+  return exactLabels[source] || source || "Phiên bản tiêu chuẩn";
+}
+
+function localizePurchaseModel(value) {
+  const source = String(value || "").trim();
+  const modelLabels = {
+    "Everose gold": "Vàng Everose 18K",
+    "Platinum": "Bạch kim",
+    "Vàng vàng": "Vàng vàng 18K",
+  };
+
+  return modelLabels[source] || source;
+}
+
 let csvPrices = [];
 let csvPricesLoaded = false;
 
@@ -48,12 +76,12 @@ supabasePublicClient
         name: `${watch.brand} ${watch.family} ${watch.model}`,
         brand: watch.brand,
         family: watch.family,
-        model: watch.model,
+        model: localizePurchaseModel(watch.model),
         nickname: watch.nickname,
         ref: watch.reference,
         variantId: watch.variant_id,
         variantKey: watch.variant_key,
-        variantLabel: watch.variant_label || watch.bracelet || watch.dial || "Tiêu chuẩn",
+        variantLabel: localizePurchaseLabel(watch.variant_label || watch.bracelet || watch.dial),
         bracelet: watch.bracelet,
         dial: watch.dial,
         displayOrder: Number(watch.display_order || 0),
