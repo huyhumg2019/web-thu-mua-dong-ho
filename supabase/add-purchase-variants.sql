@@ -113,3 +113,48 @@ join public.purchase_price_variants v on v.reference = p.reference
 where p.active = true and v.active = true;
 
 grant select on public.purchase_catalog_variants to anon, authenticated;
+
+
+alter table public.purchase_price_variants enable row level security;
+
+drop policy if exists "Public can view active purchase variants"
+on public.purchase_price_variants;
+create policy "Public can view active purchase variants"
+on public.purchase_price_variants for select
+to anon, authenticated
+using (active = true);
+
+grant select on public.purchase_price_variants to anon, authenticated;
+grant all on public.purchase_price_variants to service_role;
+
+create or replace view public.purchase_catalog_variants
+with (security_invoker = true) as
+select
+  v.id as variant_id,
+  p.reference,
+  p.brand,
+  p.family,
+  p.model,
+  v.variant_key,
+  v.variant_label,
+  v.bracelet,
+  v.dial,
+  v.display_order,
+  v.new_price_million_vnd,
+  v.used_price_million_vnd,
+  v.image_url,
+  v.updated_at
+from public.purchase_prices p
+join public.purchase_price_variants v
+  on v.reference = p.reference
+where p.active = true and v.active = true;
+
+grant select on public.purchase_catalog_variants to anon, authenticated;
+
+-- Mã này có hai loại dây trên Kame nhưng chưa có trong danh mục cũ.
+insert into public.purchase_prices (
+  reference, brand, family, model, active
+) values (
+  '126710GRNR', 'Rolex', 'GMT-Master II', 'Vành xám - đen', true
+)
+on conflict (reference) do update set active = true;
