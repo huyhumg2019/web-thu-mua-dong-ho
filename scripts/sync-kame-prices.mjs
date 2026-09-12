@@ -7,12 +7,12 @@ const VIETCOMBANK_RATE_URL =
 
 const TARGETS = [
   { reference: "126710BLRO" },
-  { reference: "126710BLNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
-  { reference: "126710BLNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
-  { reference: "126710GRNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
-  { reference: "126710GRNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
-  { reference: "126720VTNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
-  { reference: "126720VTNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
+  { reference: "126710BLNR", variantKey: "jubilee-black", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126710BLNR", variantKey: "oyster-black", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
+  { reference: "126710GRNR", variantKey: "jubilee-black", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126710GRNR", variantKey: "oyster-black", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
+  { reference: "126720VTNR", variantKey: "jubilee-black", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126720VTNR", variantKey: "oyster-black", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
   { reference: "126713GRNR" },
   { reference: "126711CHNR" },
   { reference: "126718GRNR" },
@@ -305,7 +305,11 @@ async function supabaseRequest(path, options = {}) {
     return null;
   }
 
-  return response.json();
+  const responseText = await response.text();
+
+  return responseText
+    ? JSON.parse(responseText)
+    : null;
 }
 
 async function uploadImage(reference, sourceUrl) {
