@@ -68,9 +68,9 @@ select
   coalesce(p.auto_new_price_million_vnd, p.new_price_million_vnd),
   coalesce(p.auto_used_price_million_vnd, p.used_price_million_vnd),
   p.manual_new_price_million_vnd, p.manual_used_price_million_vnd,
-  p.image_url, p.source_name, p.source_url, p.source_reference,
+  p.image_url, p.price_source, p.source_url, p.reference,
   p.source_new_price_man_yen, p.source_used_price_man_yen,
-  p.source_checked_at, p.fx_jpy_vnd, p.buffer_man_yen
+  p.source_checked_at, p.source_exchange_rate_jpy_vnd, null
 from public.purchase_prices p
 on conflict (reference, variant_key) do nothing;
 
