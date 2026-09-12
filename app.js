@@ -1113,12 +1113,40 @@ async function updateAccountNavigation() {
 
 updateAccountNavigation();
 
-/* Chuyển riêng giữa khu thu mua và khu hàng có sẵn */
+/* Chỉ hiển thị một khu: Thu mua hoặc Hàng có sẵn */
+function setCatalogMode(mode) {
+  const isStock = mode === "stock";
+  const buySection = document.getElementById("buy");
+  const stockSection = document.getElementById("available");
+  const brandModelsSection = document.getElementById("brand-models");
+
+  buySection.hidden = isStock;
+  stockSection.hidden = !isStock;
+  brandModelsSection.hidden = true;
+
+  document.querySelectorAll("[data-catalog-mode]").forEach((link) => {
+    const isActive = link.dataset.catalogMode === mode;
+    link.toggleAttribute("aria-current", isActive);
+  });
+}
+
+function catalogModeFromHash() {
+  return window.location.hash === "#available" ? "stock" : "purchase";
+}
+
 document.querySelectorAll("[data-catalog-mode]").forEach((link) => {
   link.addEventListener("click", () => {
-    const isPurchase = link.dataset.catalogMode === "purchase";
-    document.getElementById("buy").hidden = !isPurchase;
-    document.getElementById("available").hidden = isPurchase;
-    document.getElementById("brand-models").hidden = true;
+    setCatalogMode(link.dataset.catalogMode);
   });
 });
+
+window.addEventListener("hashchange", () => {
+  if (
+    window.location.hash === "#buy" ||
+    window.location.hash === "#available"
+  ) {
+    setCatalogMode(catalogModeFromHash());
+  }
+});
+
+setCatalogMode(catalogModeFromHash());
