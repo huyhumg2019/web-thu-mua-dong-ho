@@ -83,6 +83,23 @@ function decodeHtml(value) {
     );
 }
 
+function localizeKameVariant(value) {
+  const source = String(value || "").trim();
+  const labels = {
+    "ブラック": "Mặt đen",
+    "ホワイト": "Mặt trắng",
+    "ブルー": "Mặt xanh",
+    "グレー": "Mặt xám",
+    "ブラウン": "Mặt nâu",
+    "プラチナ": "Bạch kim",
+    "ゴールデン（シャンパン）": "Mặt champagne",
+    "ゴールデン(シャンパン)": "Mặt champagne",
+    "ブラック/サンダスト": "Mặt đen / Sundust",
+  };
+
+  return labels[source] || source || "Phiên bản tiêu chuẩn";
+}
+
 function htmlToText(html) {
   return decodeHtml(
     html
@@ -674,42 +691,42 @@ async function main() {
         },
       );
 
-      if (target.variantKey) {
-        const variantChanges = {
-          reference: target.reference,
-          variant_key: target.variantKey,
-          variant_label: target.variantLabel,
-          nickname: target.nickname || null,
-          bracelet: target.bracelet || null,
-          dial: listing.variant || null,
-          display_order: target.occurrence || 0,
-          active: true,
-          price_mode: "auto",
-          auto_new_price_million_vnd: autoNewPrice,
-          auto_used_price_million_vnd: autoUsedPrice,
-          image_url: localImageUrl || null,
-          source_name: "kame-kichi",
-          source_url: KAME_URL,
-          source_reference: sourceReference,
-          source_new_price_man_yen: listing.newPriceManYen,
-          source_used_price_man_yen: listing.usedPriceManYen,
-          source_checked_at: now,
-          fx_jpy_vnd: jpyToVnd,
-          buffer_man_yen: bufferManYen,
-        };
+      const variantChanges = {
+        reference: target.reference,
+        variant_key: target.variantKey || "default",
+        variant_label:
+          target.variantLabel ||
+          localizeKameVariant(listing.variant),
+        nickname: target.nickname || null,
+        bracelet: target.bracelet || null,
+        dial: localizeKameVariant(listing.variant),
+        display_order: target.occurrence || 0,
+        active: true,
+        price_mode: "auto",
+        auto_new_price_million_vnd: autoNewPrice,
+        auto_used_price_million_vnd: autoUsedPrice,
+        image_url: localImageUrl || null,
+        source_name: "kame-kichi",
+        source_url: KAME_URL,
+        source_reference: sourceReference,
+        source_new_price_man_yen: listing.newPriceManYen,
+        source_used_price_man_yen: listing.usedPriceManYen,
+        source_checked_at: now,
+        fx_jpy_vnd: jpyToVnd,
+        buffer_man_yen: bufferManYen,
+      };
 
-        await supabaseRequest(
-          "/rest/v1/purchase_price_variants?on_conflict=reference,variant_key",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Prefer: "resolution=merge-duplicates,return=minimal",
-            },
-            body: JSON.stringify(variantChanges),
+      await supabaseRequest(
+        "/rest/v1/purchase_price_variants?on_conflict=reference,variant_key",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
           },
-        );
-      }
+          body: JSON.stringify(variantChanges),
+        },
+      );
 
       reportRow.status = "updated";
       reportRow.imageUrl = localImageUrl;
