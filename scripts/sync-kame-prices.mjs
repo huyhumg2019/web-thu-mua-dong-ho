@@ -19,11 +19,13 @@ const TARGETS = [
   {
     reference: "126500LN-W",
     sourceReference: "126500LN",
+    nickname: "Panda",
     dialKeywords: ["ホワイト"],
   },
   {
     reference: "126500LN-B",
     sourceReference: "126500LN",
+    nickname: "Reverse Panda",
     dialKeywords: ["ブラック"],
   },
   { reference: "126503" },
