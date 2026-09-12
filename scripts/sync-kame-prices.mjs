@@ -7,8 +7,12 @@ const VIETCOMBANK_RATE_URL =
 
 const TARGETS = [
   { reference: "126710BLRO" },
-  { reference: "126710BLNR" },
-  { reference: "126720VTNR" },
+  { reference: "126710BLNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126710BLNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
+  { reference: "126710GRNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126710GRNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
+  { reference: "126720VTNR", variantKey: "jubilee", variantLabel: "Dây Jubilee", bracelet: "Jubilee", occurrence: 0 },
+  { reference: "126720VTNR", variantKey: "oyster", variantLabel: "Dây Oyster", bracelet: "Oyster", occurrence: 1 },
   { reference: "126713GRNR" },
   { reference: "126711CHNR" },
   { reference: "126718GRNR" },
@@ -184,7 +188,7 @@ function parseListings(html) {
   return listings;
 }
 
-function findImage(images, sourceReference, keywords) {
+function findImage(images, sourceReference, keywords, occurrence = 0) {
   const matches = images.filter((image) => {
     const normalizedAlt = image.alt.toUpperCase();
 
@@ -196,7 +200,7 @@ function findImage(images, sourceReference, keywords) {
     );
   });
 
-  return matches[0]?.url || "";
+  return matches[occurrence]?.url || matches[0]?.url || "";
 }
 
 function chooseListing(listings, target) {
@@ -222,6 +226,10 @@ function chooseListing(listings, target) {
 
   // Một Reference có thể có nhiều dây hoặc mặt số.
   // Chọn mức thấp nhất để tránh báo giá thu mua quá cao.
+  if (Number.isInteger(target.occurrence)) {
+    return candidates[target.occurrence] || null;
+  }
+
   return [...candidates].sort(
     (first, second) =>
       first.newPriceManYen - second.newPriceManYen,
@@ -550,6 +558,7 @@ async function main() {
       images,
       sourceReference,
       keywords,
+      target.occurrence || 0,
     );
 
     const autoNewPrice = calculateVndMillions(
@@ -566,6 +575,7 @@ async function main() {
     const current =
       existingByReference.get(target.reference);
     const hasHistory =
+      !target.variantKey &&
       Boolean(current?.source_last_success_at);
 
     if (
@@ -611,7 +621,7 @@ async function main() {
 
       try {
         localImageUrl = await uploadImage(
-          target.reference,
+          `${target.reference}-${target.variantKey || "default"}`,
           sourceImageUrl,
         );
       } catch (error) {
@@ -659,6 +669,42 @@ async function main() {
           body: JSON.stringify(changes),
         },
       );
+
+      if (target.variantKey) {
+        const variantChanges = {
+          reference: target.reference,
+          variant_key: target.variantKey,
+          variant_label: target.variantLabel,
+          bracelet: target.bracelet || null,
+          dial: listing.variant || null,
+          display_order: target.occurrence || 0,
+          active: true,
+          price_mode: "auto",
+          auto_new_price_million_vnd: autoNewPrice,
+          auto_used_price_million_vnd: autoUsedPrice,
+          image_url: localImageUrl || null,
+          source_name: "kame-kichi",
+          source_url: KAME_URL,
+          source_reference: sourceReference,
+          source_new_price_man_yen: listing.newPriceManYen,
+          source_used_price_man_yen: listing.usedPriceManYen,
+          source_checked_at: now,
+          fx_jpy_vnd: jpyToVnd,
+          buffer_man_yen: bufferManYen,
+        };
+
+        await supabaseRequest(
+          "/rest/v1/purchase_price_variants?on_conflict=reference,variant_key",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Prefer: "resolution=merge-duplicates,return=minimal",
+            },
+            body: JSON.stringify(variantChanges),
+          },
+        );
+      }
 
       reportRow.status = "updated";
       reportRow.imageUrl = localImageUrl;
