@@ -270,3 +270,50 @@
   background: #238636;
   vertical-align: middle;
 }
+
+/* Nhóm các biến thể cùng Reference để so sánh trực tiếp */
+.track.variant-results{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:24px;
+  overflow:visible;
+}
+.track.variant-results .watch-card{
+  width:100%;
+  max-width:none;
+}
+.track.variant-results .watch-card h3{
+  margin-bottom:4px;
+}
+.track.variant-results .watch-card p + p{
+  margin-top:3px;
+}
+@media(max-width:640px){
+  .track.variant-results{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    padding-inline:0;
+  }
+  .track.variant-results .watch-card{
+    min-width:0;
+    padding-bottom:8px;
+  }
+  .track.variant-results .watch-card img{
+    height:210px;
+    padding:6px;
+  }
+  .track.variant-results .watch-card h3{
+    font-size:17px;
+  }
+  .track.variant-results .watch-card p,
+  .track.variant-results .two-prices span{
+    font-size:11px;
+  }
+  .track.variant-results .two-prices span{
+    display:block;
+    margin-bottom:8px;
+  }
+  .track.variant-results .two-prices b{
+    display:block;
+  }
+}
