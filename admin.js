@@ -14,8 +14,11 @@ const productAdminMessage = document.getElementById(
   "product-admin-message",
 );
 const adminUser = document.getElementById("admin-user");
-const syncExchangeRateInput = document.getElementById(
-  "sync-exchange-rate",
+const syncDcomAdjustmentInput = document.getElementById(
+  "sync-dcom-adjustment",
+);
+const syncDcomAdjustmentLabel = document.getElementById(
+  "sync-dcom-adjustment-label",
 );
 const syncBufferInput = document.getElementById(
   "sync-buffer-man-yen",
@@ -198,13 +201,18 @@ async function loadLatestSyncStatus() {
 }
 
 async function requestKameSync(applyChanges) {
-  const rateText = syncExchangeRateInput.value.trim();
+  const adjustmentText = syncDcomAdjustmentInput.value.trim();
   const bufferText = syncBufferInput.value.trim();
-  const rate = rateText === "" ? null : Number(rateText);
+  const adjustment = Number(adjustmentText);
   const buffer = Number(bufferText);
 
-  if (rate !== null && (!Number.isFinite(rate) || rate <= 0)) {
-    syncMessage.textContent = "Tỷ giá phải lớn hơn 0 hoặc để trống.";
+  if (
+    !Number.isFinite(adjustment) ||
+    adjustment < -50 ||
+    adjustment > 50
+  ) {
+    syncMessage.textContent =
+      "Mức điều chỉnh DCOM phải từ −50 đến +50.";
     return;
   }
 
@@ -232,7 +240,7 @@ async function requestKameSync(applyChanges) {
     await invokeSyncControl({
       action: "dispatch",
       applyChanges,
-      jpyToVndRate: rate,
+      dcomRateAdjustment: adjustment,
       bufferManYen: buffer,
     });
 
@@ -254,6 +262,21 @@ async function requestKameSync(applyChanges) {
   }
 }
 
+function renderDcomAdjustmentLabel() {
+  const adjustment = Number(syncDcomAdjustmentInput.value);
+
+  if (!Number.isFinite(adjustment)) {
+    syncDcomAdjustmentLabel.textContent =
+      "Nhập mức cộng hoặc trừ so với tỷ giá DCOM.";
+    return;
+  }
+
+  const operator = adjustment >= 0 ? "+" : "−";
+  syncDcomAdjustmentLabel.textContent =
+    `Tỷ giá sử dụng: DCOM ${operator} ` +
+    `${Math.abs(adjustment)} VND/JPY.`;
+}
+
 previewSyncButton.addEventListener("click", () => {
   requestKameSync(false);
 });
@@ -265,6 +288,13 @@ applySyncButton.addEventListener("click", () => {
 refreshSyncStatusButton.addEventListener("click", () => {
   loadLatestSyncStatus();
 });
+
+syncDcomAdjustmentInput.addEventListener(
+  "input",
+  renderDcomAdjustmentLabel,
+);
+
+renderDcomAdjustmentLabel();
 
 /* ===== QUẢN LÝ GIÁ THU MUA ===== */
 
