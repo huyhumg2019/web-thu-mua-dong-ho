@@ -35,6 +35,7 @@ const applySyncButton = document.getElementById("apply-kame-sync");
 const refreshSyncStatusButton = document.getElementById(
   "refresh-sync-status",
 );
+const KAME_SYNC_SETTINGS_KEY = "rewatch-kame-sync-settings";
 
 const priceTableBody = document.getElementById("price-table-body");
 const priceSearchInput = document.getElementById("price-search");
@@ -293,6 +294,38 @@ function renderBufferLabel() {
     `Giá thu mua sử dụng: Giá Kame − ${buffer}万円.`;
 }
 
+function saveKameSyncSettings() {
+  try {
+    window.localStorage.setItem(
+      KAME_SYNC_SETTINGS_KEY,
+      JSON.stringify({
+        dcomRateAdjustment: syncDcomAdjustmentInput.value,
+        bufferManYen: syncBufferInput.value,
+      }),
+    );
+  } catch (error) {
+    console.warn("Không lưu được thiết lập đồng bộ.", error);
+  }
+}
+
+function restoreKameSyncSettings() {
+  try {
+    const saved = JSON.parse(
+      window.localStorage.getItem(KAME_SYNC_SETTINGS_KEY) || "null",
+    );
+
+    if (saved?.dcomRateAdjustment !== undefined) {
+      syncDcomAdjustmentInput.value = saved.dcomRateAdjustment;
+    }
+
+    if (saved?.bufferManYen !== undefined) {
+      syncBufferInput.value = saved.bufferManYen;
+    }
+  } catch (error) {
+    console.warn("Không đọc được thiết lập đồng bộ.", error);
+  }
+}
+
 previewSyncButton.addEventListener("click", () => {
   requestKameSync(false);
 });
@@ -307,11 +340,18 @@ refreshSyncStatusButton.addEventListener("click", () => {
 
 syncDcomAdjustmentInput.addEventListener(
   "input",
-  renderDcomAdjustmentLabel,
+  () => {
+    renderDcomAdjustmentLabel();
+    saveKameSyncSettings();
+  },
 );
 
-syncBufferInput.addEventListener("input", renderBufferLabel);
+syncBufferInput.addEventListener("input", () => {
+  renderBufferLabel();
+  saveKameSyncSettings();
+});
 
+restoreKameSyncSettings();
 renderDcomAdjustmentLabel();
 renderBufferLabel();
 
