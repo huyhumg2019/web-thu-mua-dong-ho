@@ -71,6 +71,9 @@ const manualPurchaseImage = document.getElementById(
 
 const priceTableBody = document.getElementById("price-table-body");
 const priceSearchInput = document.getElementById("price-search");
+const priceFamilyFilter = document.getElementById(
+  "price-family-filter",
+);
 
 const productTableBody = document.getElementById(
   "product-table-body",
@@ -512,10 +515,77 @@ async function loadPrices() {
   }
 
   priceRows = data || [];
-  renderPrices(priceRows);
+  updatePriceFamilyFilter();
+  renderFilteredPrices();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference.`;
+}
+
+function getPriceFamilyGroup(watch) {
+  const family = String(watch.family || "Khác").trim();
+
+  if (["Submariner", "Submariner Date"].includes(family)) {
+    return "Submariner";
+  }
+
+  if (["Sea-Dweller", "Deepsea"].includes(family)) {
+    return "Sea-Dweller / Deepsea";
+  }
+
+  if (["Explorer", "Explorer II"].includes(family)) {
+    return "Explorer";
+  }
+
+  return family || "Khác";
+}
+
+function updatePriceFamilyFilter() {
+  const selectedFamily = priceFamilyFilter.value;
+  const families = [...new Set(
+    priceRows.map(getPriceFamilyGroup),
+  )].sort((first, second) =>
+    first.localeCompare(second, "vi"),
+  );
+
+  priceFamilyFilter.innerHTML =
+    '<option value="">Tất cả dòng đồng hồ</option>';
+
+  families.forEach((family) => {
+    const option = document.createElement("option");
+    option.value = family;
+    option.textContent = family;
+    priceFamilyFilter.appendChild(option);
+  });
+
+  if (families.includes(selectedFamily)) {
+    priceFamilyFilter.value = selectedFamily;
+  }
+}
+
+function renderFilteredPrices() {
+  const keyword = priceSearchInput.value.trim().toLowerCase();
+  const selectedFamily = priceFamilyFilter.value;
+  const filteredRows = priceRows.filter((watch) => {
+    const searchableText = [
+      watch.reference,
+      watch.brand,
+      watch.family,
+      watch.model,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      searchableText.includes(keyword) &&
+      (
+        !selectedFamily ||
+        getPriceFamilyGroup(watch) === selectedFamily
+      )
+    );
+  });
+
+  renderPrices(filteredRows);
 }
 
 function createCell(text) {
@@ -562,7 +632,41 @@ function createPricePairCell(newPrice, usedPrice) {
 function renderPrices(rows) {
   priceTableBody.innerHTML = "";
 
-  rows.forEach((watch) => {
+  const sortedRows = [...rows].sort((first, second) => {
+    const familyComparison = getPriceFamilyGroup(first)
+      .localeCompare(getPriceFamilyGroup(second), "vi");
+
+    if (familyComparison !== 0) {
+      return familyComparison;
+    }
+
+    return String(first.reference).localeCompare(
+      String(second.reference),
+    );
+  });
+  const familyCounts = sortedRows.reduce((counts, watch) => {
+    const family = getPriceFamilyGroup(watch);
+    counts.set(family, (counts.get(family) || 0) + 1);
+    return counts;
+  }, new Map());
+  let currentFamily = "";
+
+  sortedRows.forEach((watch) => {
+    const family = getPriceFamilyGroup(watch);
+
+    if (family !== currentFamily) {
+      currentFamily = family;
+      const groupRow = document.createElement("tr");
+      const groupCell = document.createElement("td");
+
+      groupRow.className = "family-group-row";
+      groupCell.colSpan = 7;
+      groupCell.textContent =
+        `${family} · ${familyCounts.get(family)} mã`;
+      groupRow.appendChild(groupCell);
+      priceTableBody.appendChild(groupRow);
+    }
+
     const row = document.createElement("tr");
 
     row.appendChild(createCell(watch.reference));
@@ -1220,25 +1324,8 @@ document
     ]);
   });
 
-priceSearchInput.addEventListener("input", () => {
-  const keyword =
-    priceSearchInput.value.trim().toLowerCase();
-
-  const filteredRows = priceRows.filter((watch) => {
-    const searchableText = [
-      watch.reference,
-      watch.brand,
-      watch.family,
-      watch.model,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return searchableText.includes(keyword);
-  });
-
-  renderPrices(filteredRows);
-});
+priceSearchInput.addEventListener("input", renderFilteredPrices);
+priceFamilyFilter.addEventListener("change", renderFilteredPrices);
 
 async function startAdmin() {
   if (!config?.url || !config?.publishableKey) {
