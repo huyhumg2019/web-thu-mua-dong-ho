@@ -4,7 +4,7 @@ const KAME_URL =
   "https://www.kame-kichi.com/buy/examples";
 const SENDMONEY_RATE_URL =
   "https://sendmoney.co.jp/vi/fx-rate";
-const SENDMONEY_RATE_ADJUSTMENT_VND = -2;
+const DEFAULT_SENDMONEY_RATE_ADJUSTMENT_VND = -2;
 
 const SPECIAL_TARGETS = [
   { reference: "126710BLNR", variantKey: "jubilee-black", variantLabel: "Dây Jubilee", bracelet: "Jubilee", nickname: "Batgirl", occurrence: 0 },
@@ -597,6 +597,20 @@ async function uploadImage(reference, sourceUrl) {
 
 async function resolveJpyToVndRate(existingRows) {
   const manualRate = Number(process.env.JPY_TO_VND_RATE);
+  const adjustment = Number(
+    process.env.DCOM_RATE_ADJUSTMENT ??
+      DEFAULT_SENDMONEY_RATE_ADJUSTMENT_VND,
+  );
+
+  if (
+    !Number.isFinite(adjustment) ||
+    adjustment < -50 ||
+    adjustment > 50
+  ) {
+    throw new Error(
+      "DCOM_RATE_ADJUSTMENT phải từ -50 đến +50.",
+    );
+  }
 
   if (Number.isFinite(manualRate) && manualRate > 0) {
     return {
@@ -637,18 +651,20 @@ async function resolveJpyToVndRate(existingRows) {
     }
 
     const adjustedRate = Math.max(
-      listedRate + SENDMONEY_RATE_ADJUSTMENT_VND,
+      listedRate + adjustment,
       0,
     );
 
     console.log(
-      `Tỷ giá DCOM: ${listedRate} - 2 = ` +
+      `Tỷ giá DCOM: ${listedRate} ` +
+        `${adjustment >= 0 ? "+" : "-"} ` +
+        `${Math.abs(adjustment)} = ` +
         `${adjustedRate} VND/JPY.`,
     );
 
     return {
       rate: adjustedRate,
-      source: "dcom-vnd-minus-2",
+      source: `dcom-vnd-adjustment-${adjustment}`,
       checkedAt: new Date().toISOString(),
     };
   } catch (error) {
