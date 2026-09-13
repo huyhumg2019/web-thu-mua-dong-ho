@@ -35,6 +35,39 @@ const applySyncButton = document.getElementById("apply-kame-sync");
 const refreshSyncStatusButton = document.getElementById(
   "refresh-sync-status",
 );
+const newManualPurchaseButton = document.getElementById(
+  "new-manual-purchase-button",
+);
+const manualPurchaseForm = document.getElementById(
+  "manual-purchase-form",
+);
+const cancelManualPurchaseButton = document.getElementById(
+  "cancel-manual-purchase-button",
+);
+const manualPurchaseReference = document.getElementById(
+  "manual-purchase-reference",
+);
+const manualPurchaseBrand = document.getElementById(
+  "manual-purchase-brand",
+);
+const manualPurchaseFamily = document.getElementById(
+  "manual-purchase-family",
+);
+const manualPurchaseModel = document.getElementById(
+  "manual-purchase-model",
+);
+const manualPurchaseVariant = document.getElementById(
+  "manual-purchase-variant",
+);
+const manualPurchaseNewPrice = document.getElementById(
+  "manual-purchase-new-price",
+);
+const manualPurchaseUsedPrice = document.getElementById(
+  "manual-purchase-used-price",
+);
+const manualPurchaseImage = document.getElementById(
+  "manual-purchase-image",
+);
 
 const priceTableBody = document.getElementById("price-table-body");
 const priceSearchInput = document.getElementById("price-search");
@@ -323,6 +356,139 @@ syncBufferInput.addEventListener("input", renderBufferLabel);
 
 renderDcomAdjustmentLabel();
 renderBufferLabel();
+
+async function uploadManualPurchaseImage(reference, file) {
+  const allowedTypes = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/avif": "avif",
+  };
+  const extension = allowedTypes[file.type];
+
+  if (!extension) {
+    throw new Error("Ảnh phải là JPG, PNG, WEBP hoặc AVIF.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Ảnh không được lớn hơn 5 MB.");
+  }
+
+  const path =
+    `manual/${reference.toLowerCase()}-${Date.now()}.${extension}`;
+  const { error } = await supabaseClient.storage
+    .from("purchase-price-images")
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const { data } = supabaseClient.storage
+    .from("purchase-price-images")
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
+function closeManualPurchaseForm() {
+  manualPurchaseForm.reset();
+  manualPurchaseBrand.value = "Rolex";
+  manualPurchaseForm.hidden = true;
+}
+
+newManualPurchaseButton.addEventListener("click", () => {
+  manualPurchaseForm.hidden = false;
+  manualPurchaseForm.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+  manualPurchaseReference.focus();
+});
+
+cancelManualPurchaseButton.addEventListener(
+  "click",
+  closeManualPurchaseForm,
+);
+
+manualPurchaseForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const reference = manualPurchaseReference.value
+    .trim()
+    .toUpperCase();
+  const newPrice = Number(manualPurchaseNewPrice.value);
+  const usedPrice = Number(manualPurchaseUsedPrice.value);
+  const imageFile = manualPurchaseImage.files?.[0];
+
+  if (!/^[0-9A-Z-]+$/.test(reference)) {
+    adminMessage.textContent = "Reference không hợp lệ.";
+    return;
+  }
+
+  if (
+    !Number.isFinite(newPrice) ||
+    !Number.isFinite(usedPrice) ||
+    newPrice < 0 ||
+    usedPrice < 0
+  ) {
+    adminMessage.textContent =
+      "Vui lòng nhập đủ hai mức giá từ 0 trở lên.";
+    return;
+  }
+
+  if (!imageFile) {
+    adminMessage.textContent = "Vui lòng chọn ảnh đồng hồ.";
+    return;
+  }
+
+  const submitButton = manualPurchaseForm.querySelector(
+    'button[type="submit"]',
+  );
+  submitButton.disabled = true;
+  submitButton.textContent = "Đang lưu...";
+  adminMessage.textContent = `Đang tải ảnh ${reference}...`;
+
+  try {
+    const imageUrl = await uploadManualPurchaseImage(
+      reference,
+      imageFile,
+    );
+    const { error } = await supabaseClient.rpc(
+      "upsert_manual_purchase_price",
+      {
+        p_reference: reference,
+        p_brand: manualPurchaseBrand.value.trim(),
+        p_family: manualPurchaseFamily.value.trim(),
+        p_model: manualPurchaseModel.value.trim(),
+        p_variant_label:
+          manualPurchaseVariant.value.trim() || "Tiêu chuẩn",
+        p_new_price: newPrice,
+        p_used_price: usedPrice,
+        p_image_url: imageUrl,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    closeManualPurchaseForm();
+    await loadPrices();
+    adminMessage.textContent =
+      `Đã lưu mã thu mua thủ công ${reference}.`;
+  } catch (error) {
+    console.error(error);
+    adminMessage.textContent =
+      error.message || `Không thể lưu ${reference}.`;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Lưu mã thu mua";
+  }
+});
 
 /* ===== QUẢN LÝ GIÁ THU MUA ===== */
 
