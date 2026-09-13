@@ -85,15 +85,19 @@
 
           <div class="kame-sync-grid">
             <label>
-              Tỷ giá JPY/VND
+              Điều chỉnh tỷ giá DCOM (VND)
               <input
-                id="sync-exchange-rate"
+                id="sync-dcom-adjustment"
                 type="number"
-                min="1"
-                step="0.01"
-                placeholder="Tự động: DCOM − 2"
+                min="-50"
+                max="50"
+                step="1"
+                value="-2"
+                required
               >
-              <small>Để trống để tự lấy tỷ giá DCOM và trừ 2.</small>
+              <small id="sync-dcom-adjustment-label">
+                Tỷ giá sử dụng: DCOM − 2 VND/JPY.
+              </small>
             </label>
 
             <label>
