@@ -87,8 +87,77 @@ async function authorizeStaff(request) {
   const role = profiles[0]?.role;
 
   return ["admin", "staff"].includes(role)
-    ? { id: user.id, role }
+    ? { id: user.id, role, authorization }
     : null;
+}
+
+async function getSyncSettings(authorization) {
+  const supabaseUrl = requireEnvironment("SUPABASE_URL");
+  const anonKey = requireEnvironment("SUPABASE_ANON_KEY");
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/kame_sync_settings` +
+      "?id=eq.default" +
+      "&select=dcom_rate_adjustment,buffer_man_yen" +
+      "&limit=1",
+    {
+      headers: {
+        apikey: anonKey,
+        Authorization: authorization,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Không đọc được thiết lập đồng bộ (${response.status}).`,
+    );
+  }
+
+  const rows = await response.json();
+  const settings = rows[0] || {
+    dcom_rate_adjustment: -2,
+    buffer_man_yen: 20,
+  };
+
+  return {
+    dcomRateAdjustment: Number(settings.dcom_rate_adjustment),
+    bufferManYen: Number(settings.buffer_man_yen),
+  };
+}
+
+async function saveSyncSettings(
+  authorization,
+  staffId,
+  adjustment,
+  buffer,
+) {
+  const supabaseUrl = requireEnvironment("SUPABASE_URL");
+  const anonKey = requireEnvironment("SUPABASE_ANON_KEY");
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/kame_sync_settings?on_conflict=id`,
+    {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        Authorization: authorization,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        id: "default",
+        dcom_rate_adjustment: adjustment,
+        buffer_man_yen: buffer,
+        updated_at: new Date().toISOString(),
+        updated_by: staffId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Không lưu được thiết lập đồng bộ (${response.status}).`,
+    );
+  }
 }
 
 async function githubRequest(path, options = {}) {
@@ -168,7 +237,12 @@ Deno.serve(async (request) => {
     const body = await request.json();
 
     if (body.action === "status") {
-      return jsonResponse(request, { run: await getLatestRun() });
+      const [run, settings] = await Promise.all([
+        getLatestRun(),
+        getSyncSettings(staff.authorization),
+      ]);
+
+      return jsonResponse(request, { run, settings });
     }
 
     if (body.action !== "dispatch") {
@@ -207,6 +281,13 @@ Deno.serve(async (request) => {
     if (rate !== null && (!Number.isFinite(rate) || rate <= 0)) {
       return jsonResponse(request, { error: "Tỷ giá không hợp lệ." }, 400);
     }
+
+    await saveSyncSettings(
+      staff.authorization,
+      staff.id,
+      adjustment,
+      buffer,
+    );
 
     await githubRequest(
       `/repos/${REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches`,

@@ -192,6 +192,15 @@ async function loadLatestSyncStatus() {
 
   try {
     const result = await invokeSyncControl({ action: "status" });
+
+    if (result.settings) {
+      syncDcomAdjustmentInput.value =
+        result.settings.dcomRateAdjustment;
+      syncBufferInput.value = result.settings.bufferManYen;
+      renderDcomAdjustmentLabel();
+      renderBufferLabel();
+    }
+
     renderSyncStatus(result.run);
   } catch (error) {
     console.error(error);

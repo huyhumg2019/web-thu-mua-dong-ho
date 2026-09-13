@@ -80,6 +80,7 @@ jobs:
         if: github.event_name == 'schedule'
         env:
           APPLY_CHANGES: "true"
+          USE_SAVED_SYNC_SETTINGS: "true"
           JPY_TO_VND_RATE: ""
           DCOM_RATE_ADJUSTMENT: "-2"
           KAME_BUFFER_MAN_YEN: "20"
