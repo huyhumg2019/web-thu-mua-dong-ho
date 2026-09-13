@@ -54,7 +54,8 @@
 }
 
 #login-message,
-#admin-message {
+#admin-message,
+#kame-sync-message {
   min-height: 24px;
   color: var(--red);
   font-size: 14px;
@@ -116,6 +117,108 @@
   height: 46px;
   padding: 0 14px;
   border: 1px solid #bbb;
+}
+
+/* ===== ĐỒNG BỘ KAME ===== */
+
+.kame-sync-panel {
+  margin-bottom: 32px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.kame-sync-heading {
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.kame-sync-heading h2 {
+  font-size: 32px;
+}
+
+.kame-sync-heading button,
+.kame-sync-actions button {
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.kame-sync-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(260px, 1.25fr);
+  gap: 20px;
+}
+
+.kame-sync-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #444;
+  font-size: 14px;
+}
+
+.kame-sync-grid input {
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid #bbb;
+  font: inherit;
+}
+
+.kame-sync-grid small {
+  color: var(--grey);
+  line-height: 1.45;
+}
+
+.kame-sync-status {
+  padding: 16px;
+  background: #f2f2f0;
+  color: #444;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.kame-sync-status.success {
+  background: #e7f4eb;
+  color: #176b36;
+}
+
+.kame-sync-status.failure {
+  background: #f5e8e8;
+  color: #a4252f;
+}
+
+.kame-sync-status.running {
+  background: #fff4d8;
+  color: #765900;
+}
+
+.kame-sync-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.kame-sync-actions #apply-kame-sync {
+  background: var(--ink);
+  color: #fff;
+}
+
+.kame-sync-heading button:hover,
+.kame-sync-actions button:hover {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+}
+
+.kame-sync-heading button:disabled,
+.kame-sync-actions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 
 .admin-table-wrapper {
@@ -366,12 +469,36 @@
 }
 
 @media (max-width: 900px) {
+  .kame-sync-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kame-sync-status {
+    grid-column: 1 / -1;
+  }
+
   .admin-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 620px) {
+  .kame-sync-panel {
+    padding: 20px;
+  }
+
+  .kame-sync-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kame-sync-status {
+    grid-column: auto;
+  }
+
+  .kame-sync-actions {
+    flex-direction: column;
+  }
+
   .admin-products-section {
     margin-top: 45px;
     padding-top: 40px;
