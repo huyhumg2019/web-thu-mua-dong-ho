@@ -339,6 +339,36 @@
   background: #ffffff;
 }
 
+.admin-entry-form {
+  margin-bottom: 30px;
+  padding: 28px;
+  border: 1px solid #d9d9d9;
+  background: #ffffff;
+}
+
+.admin-entry-form[hidden] {
+  display: none;
+}
+
+.compact-heading {
+  margin-bottom: 22px;
+}
+
+.compact-heading h2 {
+  font-size: 30px;
+}
+
+.admin-toolbar-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.form-help {
+  margin: 18px 0 0;
+  color: #777777;
+  font-size: 13px;
+}
+
 #product-admin-form[hidden] {
   display: none;
 }
