@@ -48,9 +48,7 @@ function requireEnvironment(name) {
 
 async function authorizeStaff(request) {
   const supabaseUrl = requireEnvironment("SUPABASE_URL");
-  const serviceRoleKey = requireEnvironment(
-    "SUPABASE_SERVICE_ROLE_KEY",
-  );
+  const anonKey = requireEnvironment("SUPABASE_ANON_KEY");
   const authorization = request.headers.get("authorization") || "";
 
   if (!authorization.startsWith("Bearer ")) {
@@ -59,7 +57,7 @@ async function authorizeStaff(request) {
 
   const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: {
-      apikey: serviceRoleKey,
+      apikey: anonKey,
       Authorization: authorization,
     },
   });
@@ -75,8 +73,8 @@ async function authorizeStaff(request) {
       "&select=role&limit=1",
     {
       headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: anonKey,
+        Authorization: authorization,
       },
     },
   );
