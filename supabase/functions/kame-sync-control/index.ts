@@ -176,6 +176,7 @@ Deno.serve(async (request) => {
     }
 
     const buffer = Number(body.bufferManYen);
+    const adjustment = Number(body.dcomRateAdjustment ?? -2);
     const manualRate = body.jpyToVndRate;
     const hasManualRate =
       manualRate !== null &&
@@ -187,6 +188,18 @@ Deno.serve(async (request) => {
       return jsonResponse(
         request,
         { error: "Mức trừ giá Kame không hợp lệ." },
+        400,
+      );
+    }
+
+    if (
+      !Number.isFinite(adjustment) ||
+      adjustment < -50 ||
+      adjustment > 50
+    ) {
+      return jsonResponse(
+        request,
+        { error: "Mức điều chỉnh DCOM phải từ -50 đến +50." },
         400,
       );
     }
@@ -205,6 +218,7 @@ Deno.serve(async (request) => {
           inputs: {
             apply_changes: String(Boolean(body.applyChanges)),
             jpy_to_vnd_rate: rate === null ? "" : String(rate),
+            dcom_rate_adjustment: String(adjustment),
             buffer_man_yen: String(buffer),
           },
         }),
