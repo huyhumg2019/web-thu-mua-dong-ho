@@ -760,6 +760,7 @@ async function main() {
       (await supabaseRequest(
         "/rest/v1/purchase_prices" +
           "?select=reference,brand,family,model,active,price_mode," +
+          "new_price_million_vnd,used_price_million_vnd," +
           "auto_new_price_million_vnd," +
           "auto_used_price_million_vnd," +
           "source_last_success_at," +
@@ -928,7 +929,14 @@ async function main() {
       const identity = deriveCatalogIdentity(listing);
       const changes = {
         reference: target.reference,
+        brand: "Rolex",
+        family: identity.family,
+        model: identity.model,
         active: true,
+        new_price_million_vnd:
+          current?.new_price_million_vnd ?? autoNewPrice ?? 0,
+        used_price_million_vnd:
+          current?.used_price_million_vnd ?? autoUsedPrice ?? 0,
         auto_new_price_million_vnd: autoNewPrice,
         price_source: "kame-kichi",
         source_url: KAME_URL,
@@ -954,14 +962,6 @@ async function main() {
 
       if (localImageUrl) {
         changes.image_url = localImageUrl;
-      }
-
-      if (!current) {
-        changes.brand = "Rolex";
-        changes.family = identity.family;
-        changes.model = identity.model;
-        changes.new_price_million_vnd = autoNewPrice || 0;
-        changes.used_price_million_vnd = autoUsedPrice || 0;
       }
 
       await supabaseRequest(
