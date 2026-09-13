@@ -20,10 +20,15 @@ on:
         type: boolean
         default: false
       jpy_to_vnd_rate:
-        description: "Để trống: tự lấy tỷ giá DCOM và trừ 2 VND"
+        description: "Tỷ giá cố định; để trống để dùng DCOM"
         required: false
         type: string
         default: ""
+      dcom_rate_adjustment:
+        description: "Số VND cộng/trừ vào tỷ giá DCOM"
+        required: true
+        type: string
+        default: "-2"
       buffer_man_yen:
         description: "Số 万円 trừ khỏi giá Kame"
         required: true
@@ -56,6 +61,7 @@ jobs:
         env:
           APPLY_CHANGES: "false"
           JPY_TO_VND_RATE: "1"
+          DCOM_RATE_ADJUSTMENT: "-2"
           KAME_BUFFER_MAN_YEN: "20"
         run: node scripts/sync-kame-prices.mjs
 
@@ -64,6 +70,7 @@ jobs:
         env:
           APPLY_CHANGES: ${{ inputs.apply_changes }}
           JPY_TO_VND_RATE: ${{ inputs.jpy_to_vnd_rate }}
+          DCOM_RATE_ADJUSTMENT: ${{ inputs.dcom_rate_adjustment }}
           KAME_BUFFER_MAN_YEN: ${{ inputs.buffer_man_yen }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -74,6 +81,7 @@ jobs:
         env:
           APPLY_CHANGES: "true"
           JPY_TO_VND_RATE: ""
+          DCOM_RATE_ADJUSTMENT: "-2"
           KAME_BUFFER_MAN_YEN: "20"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
