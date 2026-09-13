@@ -23,6 +23,9 @@ const syncDcomAdjustmentLabel = document.getElementById(
 const syncBufferInput = document.getElementById(
   "sync-buffer-man-yen",
 );
+const syncBufferLabel = document.getElementById(
+  "sync-buffer-label",
+);
 const syncStatus = document.getElementById("kame-sync-status");
 const syncMessage = document.getElementById("kame-sync-message");
 const previewSyncButton = document.getElementById(
@@ -277,6 +280,19 @@ function renderDcomAdjustmentLabel() {
     `${Math.abs(adjustment)} VND/JPY.`;
 }
 
+function renderBufferLabel() {
+  const buffer = Number(syncBufferInput.value);
+
+  if (!Number.isFinite(buffer) || buffer < 0) {
+    syncBufferLabel.textContent =
+      "Nhập số 万円 cần trừ khỏi giá Kame.";
+    return;
+  }
+
+  syncBufferLabel.textContent =
+    `Giá thu mua sử dụng: Giá Kame − ${buffer}万円.`;
+}
+
 previewSyncButton.addEventListener("click", () => {
   requestKameSync(false);
 });
@@ -294,7 +310,10 @@ syncDcomAdjustmentInput.addEventListener(
   renderDcomAdjustmentLabel,
 );
 
+syncBufferInput.addEventListener("input", renderBufferLabel);
+
 renderDcomAdjustmentLabel();
+renderBufferLabel();
 
 /* ===== QUẢN LÝ GIÁ THU MUA ===== */
 
