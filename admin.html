@@ -71,6 +71,61 @@
           </div>
         </div>
 
+        <section class="kame-sync-panel" aria-labelledby="kame-sync-title">
+          <div class="admin-section-heading kame-sync-heading">
+            <div>
+              <span class="kicker">ĐỒNG BỘ TỰ ĐỘNG</span>
+              <h2 id="kame-sync-title">Giá và ảnh Kame</h2>
+            </div>
+
+            <button id="refresh-sync-status" type="button">
+              Kiểm tra trạng thái
+            </button>
+          </div>
+
+          <div class="kame-sync-grid">
+            <label>
+              Tỷ giá JPY/VND
+              <input
+                id="sync-exchange-rate"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Tự động: DCOM − 2"
+              >
+              <small>Để trống để tự lấy tỷ giá DCOM và trừ 2.</small>
+            </label>
+
+            <label>
+              Trừ giá Kame (万円)
+              <input
+                id="sync-buffer-man-yen"
+                type="number"
+                min="0"
+                step="1"
+                value="20"
+                required
+              >
+              <small>Ví dụ 20 nghĩa là trừ 20万円 trước khi đổi sang VND.</small>
+            </label>
+
+            <div class="kame-sync-status" id="kame-sync-status">
+              Chưa kiểm tra lần đồng bộ gần nhất.
+            </div>
+          </div>
+
+          <div class="kame-sync-actions">
+            <button id="preview-kame-sync" type="button">
+              Xem trước
+            </button>
+            <button id="apply-kame-sync" type="button">
+              Đồng bộ ngay
+            </button>
+          </div>
+
+          <p id="kame-sync-message" role="status"></p>
+        </section>
+
         <div class="admin-toolbar">
           <input
             id="price-search"
