@@ -14,6 +14,21 @@ const productAdminMessage = document.getElementById(
   "product-admin-message",
 );
 const adminUser = document.getElementById("admin-user");
+const syncExchangeRateInput = document.getElementById(
+  "sync-exchange-rate",
+);
+const syncBufferInput = document.getElementById(
+  "sync-buffer-man-yen",
+);
+const syncStatus = document.getElementById("kame-sync-status");
+const syncMessage = document.getElementById("kame-sync-message");
+const previewSyncButton = document.getElementById(
+  "preview-kame-sync",
+);
+const applySyncButton = document.getElementById("apply-kame-sync");
+const refreshSyncStatusButton = document.getElementById(
+  "refresh-sync-status",
+);
 
 const priceTableBody = document.getElementById("price-table-body");
 const priceSearchInput = document.getElementById("price-search");
@@ -110,8 +125,146 @@ async function showDashboard(session) {
   await Promise.all([
     loadPrices(),
     loadProducts(),
+    loadLatestSyncStatus(),
   ]);
 }
+
+/* ===== ĐỒNG BỘ KAME ===== */
+
+function formatSyncDate(value) {
+  if (!value) {
+    return "Không rõ thời gian";
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(new Date(value));
+}
+
+function renderSyncStatus(run) {
+  syncStatus.className = "kame-sync-status";
+
+  if (!run) {
+    syncStatus.textContent = "Chưa có lần đồng bộ nào.";
+    return;
+  }
+
+  const isRunning = ["queued", "in_progress"].includes(run.status);
+  const isSuccess = run.conclusion === "success";
+  const stateText = isRunning
+    ? "Đang chạy"
+    : isSuccess
+      ? "Thành công"
+      : "Thất bại";
+
+  syncStatus.classList.add(
+    isRunning ? "running" : isSuccess ? "success" : "failure",
+  );
+  syncStatus.textContent =
+    `Lần #${run.runNumber}: ${stateText} · ` +
+    `${formatSyncDate(run.createdAt)} · ${run.eventLabel}`;
+}
+
+async function invokeSyncControl(body) {
+  const { data, error } = await supabaseClient.functions.invoke(
+    "kame-sync-control",
+    { body },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function loadLatestSyncStatus() {
+  refreshSyncStatusButton.disabled = true;
+  syncStatus.className = "kame-sync-status running";
+  syncStatus.textContent = "Đang kiểm tra trạng thái...";
+
+  try {
+    const result = await invokeSyncControl({ action: "status" });
+    renderSyncStatus(result.run);
+  } catch (error) {
+    console.error(error);
+    syncStatus.className = "kame-sync-status failure";
+    syncStatus.textContent =
+      "Chưa kết nối được chức năng đồng bộ an toàn.";
+  } finally {
+    refreshSyncStatusButton.disabled = false;
+  }
+}
+
+async function requestKameSync(applyChanges) {
+  const rateText = syncExchangeRateInput.value.trim();
+  const bufferText = syncBufferInput.value.trim();
+  const rate = rateText === "" ? null : Number(rateText);
+  const buffer = Number(bufferText);
+
+  if (rate !== null && (!Number.isFinite(rate) || rate <= 0)) {
+    syncMessage.textContent = "Tỷ giá phải lớn hơn 0 hoặc để trống.";
+    return;
+  }
+
+  if (!Number.isFinite(buffer) || buffer < 0) {
+    syncMessage.textContent = "Mức trừ giá Kame phải từ 0 trở lên.";
+    return;
+  }
+
+  if (
+    applyChanges &&
+    !window.confirm(
+      "Đồng bộ giá và ảnh Kame vào website ngay bây giờ?",
+    )
+  ) {
+    return;
+  }
+
+  previewSyncButton.disabled = true;
+  applySyncButton.disabled = true;
+  syncMessage.textContent = applyChanges
+    ? "Đang yêu cầu cập nhật dữ liệu..."
+    : "Đang yêu cầu tạo bản xem trước...";
+
+  try {
+    await invokeSyncControl({
+      action: "dispatch",
+      applyChanges,
+      jpyToVndRate: rate,
+      bufferManYen: buffer,
+    });
+
+    syncStatus.className = "kame-sync-status running";
+    syncStatus.textContent =
+      "Đã gửi yêu cầu. GitHub đang xếp hàng xử lý phía sau.";
+    syncMessage.textContent = applyChanges
+      ? "Đã bắt đầu đồng bộ thật. Kiểm tra lại sau khoảng 1 phút."
+      : "Đã bắt đầu xem trước. Dữ liệu website chưa bị thay đổi.";
+
+    window.setTimeout(loadLatestSyncStatus, 10000);
+  } catch (error) {
+    console.error(error);
+    syncMessage.textContent =
+      error.message || "Không thể bắt đầu đồng bộ.";
+  } finally {
+    previewSyncButton.disabled = false;
+    applySyncButton.disabled = false;
+  }
+}
+
+previewSyncButton.addEventListener("click", () => {
+  requestKameSync(false);
+});
+
+applySyncButton.addEventListener("click", () => {
+  requestKameSync(true);
+});
+
+refreshSyncStatusButton.addEventListener("click", () => {
+  loadLatestSyncStatus();
+});
 
 /* ===== QUẢN LÝ GIÁ THU MUA ===== */
 
