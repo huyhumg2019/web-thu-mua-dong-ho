@@ -714,7 +714,7 @@ async function resolveJpyToVndRate(existingRows) {
 async function main() {
   const applyChanges =
     process.env.APPLY_CHANGES === "true";
-  const bufferManYen = Number(
+  let bufferManYen = Number(
     process.env.KAME_BUFFER_MAN_YEN || "20",
   );
 
@@ -774,6 +774,36 @@ async function main() {
         "/rest/v1/purchase_price_variants" +
           "?select=reference,variant_key,active,price_mode",
       )) || [];
+
+    if (process.env.USE_SAVED_SYNC_SETTINGS === "true") {
+      const savedSettings =
+        (await supabaseRequest(
+          "/rest/v1/kame_sync_settings" +
+            "?id=eq.default" +
+            "&select=dcom_rate_adjustment,buffer_man_yen" +
+            "&limit=1",
+        ))?.[0];
+
+      if (savedSettings) {
+        const savedAdjustment = Number(
+          savedSettings.dcom_rate_adjustment,
+        );
+        const savedBuffer = Number(savedSettings.buffer_man_yen);
+
+        if (
+          Number.isFinite(savedAdjustment) &&
+          savedAdjustment >= -50 &&
+          savedAdjustment <= 50
+        ) {
+          process.env.DCOM_RATE_ADJUSTMENT =
+            String(savedAdjustment);
+        }
+
+        if (Number.isFinite(savedBuffer) && savedBuffer >= 0) {
+          bufferManYen = savedBuffer;
+        }
+      }
+    }
   }
 
   const exchangeRate = await resolveJpyToVndRate(
