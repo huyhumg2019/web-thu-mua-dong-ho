@@ -139,10 +139,76 @@
             placeholder="Tìm Reference hoặc tên đồng hồ"
           >
 
-          <button id="reload-prices" type="button">
-            Tải lại dữ liệu
-          </button>
+          <div class="admin-toolbar-actions">
+            <button id="new-manual-purchase-button" type="button">
+              Thêm mã thu mua thủ công
+            </button>
+
+            <button id="reload-prices" type="button">
+              Tải lại dữ liệu
+            </button>
+          </div>
         </div>
+
+        <form id="manual-purchase-form" class="admin-entry-form" hidden>
+          <div class="admin-section-heading compact-heading">
+            <div>
+              <span class="kicker">MẪU NGOÀI KAME</span>
+              <h2>Thêm hoặc cập nhật mã thu mua</h2>
+            </div>
+          </div>
+
+          <div class="admin-form-grid">
+            <label>
+              Reference
+              <input id="manual-purchase-reference" type="text" placeholder="Ví dụ: 116500LN" required>
+            </label>
+
+            <label>
+              Thương hiệu
+              <input id="manual-purchase-brand" type="text" value="Rolex" required>
+            </label>
+
+            <label>
+              Dòng đồng hồ
+              <input id="manual-purchase-family" type="text" placeholder="Ví dụ: Cosmograph Daytona" required>
+            </label>
+
+            <label>
+              Tên/phiên bản
+              <input id="manual-purchase-model" type="text" placeholder="Ví dụ: Panda" required>
+            </label>
+
+            <label>
+              Loại dây hoặc mặt số
+              <input id="manual-purchase-variant" type="text" placeholder="Ví dụ: Dây Oyster, mặt trắng">
+            </label>
+
+            <label>
+              Giá hàng mới (triệu VND)
+              <input id="manual-purchase-new-price" type="number" min="0" step="1" required>
+            </label>
+
+            <label>
+              Giá hàng đã dùng (triệu VND)
+              <input id="manual-purchase-used-price" type="number" min="0" step="1" required>
+            </label>
+
+            <label>
+              Ảnh đồng hồ
+              <input id="manual-purchase-image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required>
+            </label>
+          </div>
+
+          <p class="form-help">
+            Chỉ dùng mục này cho mẫu không có trên Kame. Giá sẽ được giữ ở chế độ thủ công.
+          </p>
+
+          <div class="admin-form-actions">
+            <button type="submit">Lưu mã thu mua</button>
+            <button id="cancel-manual-purchase-button" type="button">Hủy</button>
+          </div>
+        </form>
 
         <div class="admin-table-wrapper">
           <table class="admin-table">
