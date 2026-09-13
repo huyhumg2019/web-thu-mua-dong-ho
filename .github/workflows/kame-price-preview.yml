@@ -20,7 +20,7 @@ on:
         type: boolean
         default: false
       jpy_to_vnd_rate:
-        description: "Tỷ giá 1 JPY sang VND (để trống để lấy tự động)"
+        description: "Để trống: tự lấy tỷ giá DCOM và trừ 2 VND"
         required: false
         type: string
         default: ""
@@ -32,6 +32,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: kame-price-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
