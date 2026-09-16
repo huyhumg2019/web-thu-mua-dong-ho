@@ -71,8 +71,14 @@ const manualPurchaseImage = document.getElementById(
 
 const priceTableBody = document.getElementById("price-table-body");
 const priceSearchInput = document.getElementById("price-search");
+const priceBrandFilter = document.getElementById(
+  "price-brand-filter",
+);
 const priceFamilyFilter = document.getElementById(
   "price-family-filter",
+);
+const backupPurchasePricesButton = document.getElementById(
+  "backup-purchase-prices",
 );
 
 const productTableBody = document.getElementById(
@@ -515,11 +521,33 @@ async function loadPrices() {
   }
 
   priceRows = data || [];
-  updatePriceFamilyFilter();
+  updatePriceFilters();
   renderFilteredPrices();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference.`;
+}
+
+function getPriceBrand(watch) {
+  const brand = String(watch.brand || "Khác").trim();
+  const normalizedBrand = brand.toLowerCase();
+
+  if (normalizedBrand.includes("rolex")) {
+    return "Rolex";
+  }
+
+  if (normalizedBrand.includes("patek")) {
+    return "Patek Philippe";
+  }
+
+  if (
+    normalizedBrand === "ap" ||
+    normalizedBrand.includes("audemars")
+  ) {
+    return "Audemars Piguet (AP)";
+  }
+
+  return brand || "Khác";
 }
 
 function getPriceFamilyGroup(watch) {
@@ -542,8 +570,15 @@ function getPriceFamilyGroup(watch) {
 
 function updatePriceFamilyFilter() {
   const selectedFamily = priceFamilyFilter.value;
+  const selectedBrand = priceBrandFilter.value;
   const families = [...new Set(
-    priceRows.map(getPriceFamilyGroup),
+    priceRows
+      .filter(
+        (watch) =>
+          !selectedBrand ||
+          getPriceBrand(watch) === selectedBrand,
+      )
+      .map(getPriceFamilyGroup),
   )].sort((first, second) =>
     first.localeCompare(second, "vi"),
   );
@@ -558,13 +593,38 @@ function updatePriceFamilyFilter() {
     priceFamilyFilter.appendChild(option);
   });
 
-  if (families.includes(selectedFamily)) {
-    priceFamilyFilter.value = selectedFamily;
+  priceFamilyFilter.value = families.includes(selectedFamily)
+    ? selectedFamily
+    : "";
+}
+
+function updatePriceFilters() {
+  const selectedBrand = priceBrandFilter.value;
+  const brands = [...new Set(priceRows.map(getPriceBrand))]
+    .sort((first, second) =>
+      first.localeCompare(second, "vi"),
+    );
+
+  priceBrandFilter.innerHTML =
+    '<option value="">Tất cả thương hiệu</option>';
+
+  brands.forEach((brand) => {
+    const option = document.createElement("option");
+    option.value = brand;
+    option.textContent = brand;
+    priceBrandFilter.appendChild(option);
+  });
+
+  if (brands.includes(selectedBrand)) {
+    priceBrandFilter.value = selectedBrand;
   }
+
+  updatePriceFamilyFilter();
 }
 
 function renderFilteredPrices() {
   const keyword = priceSearchInput.value.trim().toLowerCase();
+  const selectedBrand = priceBrandFilter.value;
   const selectedFamily = priceFamilyFilter.value;
   const filteredRows = priceRows.filter((watch) => {
     const searchableText = [
@@ -578,6 +638,7 @@ function renderFilteredPrices() {
 
     return (
       searchableText.includes(keyword) &&
+      (!selectedBrand || getPriceBrand(watch) === selectedBrand) &&
       (
         !selectedFamily ||
         getPriceFamilyGroup(watch) === selectedFamily
@@ -633,6 +694,13 @@ function renderPrices(rows) {
   priceTableBody.innerHTML = "";
 
   const sortedRows = [...rows].sort((first, second) => {
+    const brandComparison = getPriceBrand(first)
+      .localeCompare(getPriceBrand(second), "vi");
+
+    if (brandComparison !== 0) {
+      return brandComparison;
+    }
+
     const familyComparison = getPriceFamilyGroup(first)
       .localeCompare(getPriceFamilyGroup(second), "vi");
 
@@ -645,24 +713,27 @@ function renderPrices(rows) {
     );
   });
   const familyCounts = sortedRows.reduce((counts, watch) => {
-    const family = getPriceFamilyGroup(watch);
-    counts.set(family, (counts.get(family) || 0) + 1);
+    const groupKey =
+      `${getPriceBrand(watch)}||${getPriceFamilyGroup(watch)}`;
+    counts.set(groupKey, (counts.get(groupKey) || 0) + 1);
     return counts;
   }, new Map());
-  let currentFamily = "";
+  let currentGroup = "";
 
   sortedRows.forEach((watch) => {
+    const brand = getPriceBrand(watch);
     const family = getPriceFamilyGroup(watch);
+    const groupKey = `${brand}||${family}`;
 
-    if (family !== currentFamily) {
-      currentFamily = family;
+    if (groupKey !== currentGroup) {
+      currentGroup = groupKey;
       const groupRow = document.createElement("tr");
       const groupCell = document.createElement("td");
 
       groupRow.className = "family-group-row";
       groupCell.colSpan = 7;
       groupCell.textContent =
-        `${family} · ${familyCounts.get(family)} mã`;
+        `${brand} · ${family} · ${familyCounts.get(groupKey)} mã`;
       groupRow.appendChild(groupCell);
       priceTableBody.appendChild(groupRow);
     }
@@ -899,6 +970,154 @@ function renderPrices(rows) {
     priceTableBody.appendChild(row);
   });
 }
+
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) {
+    return '""';
+  }
+
+  let text = String(value);
+
+  if (typeof value === "string" && /^[=+\-@]/.test(text)) {
+    text = `'${text}`;
+  }
+
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadCsvFile(rows) {
+  const csv = rows
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\r\n");
+  const blob = new Blob(["\ufeff", csv], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `rewatch-sao-luu-thu-mua-${date}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function backupPurchasePrices() {
+  backupPurchasePricesButton.disabled = true;
+  backupPurchasePricesButton.textContent = "Đang sao lưu...";
+  adminMessage.textContent =
+    "Đang chuẩn bị bản sao lưu giá và ảnh...";
+
+  try {
+    const { data: variants, error } = await supabaseClient
+      .from("purchase_price_variants")
+      .select("*")
+      .order("reference")
+      .order("display_order");
+
+    if (error) {
+      throw error;
+    }
+
+    const variantsByReference = new Map();
+
+    (variants || []).forEach((variant) => {
+      const list =
+        variantsByReference.get(variant.reference) || [];
+      list.push(variant);
+      variantsByReference.set(variant.reference, list);
+    });
+
+    const headings = [
+      "Reference",
+      "Thương hiệu",
+      "Dòng đồng hồ",
+      "Tên / phiên bản",
+      "Đang hoạt động",
+      "Chế độ giá",
+      "Giá tự động mới (triệu VND)",
+      "Giá tự động đã dùng (triệu VND)",
+      "Giá chỉnh tay mới (triệu VND)",
+      "Giá chỉnh tay đã dùng (triệu VND)",
+      "Giá hiển thị mới (triệu VND)",
+      "Giá hiển thị đã dùng (triệu VND)",
+      "Nguồn giá",
+      "URL nguồn",
+      "Mã biến thể",
+      "Tên biến thể",
+      "Loại dây",
+      "Mặt số",
+      "Chế độ biến thể",
+      "Giá biến thể mới (triệu VND)",
+      "Giá biến thể đã dùng (triệu VND)",
+      "Giá Kame mới (万円)",
+      "Giá Kame đã dùng (万円)",
+      "Tỷ giá JPY/VND",
+      "Mức trừ Kame (万円)",
+      "URL ảnh",
+      "Cập nhật lúc",
+    ];
+    const rows = [headings];
+
+    priceRows.forEach((watch) => {
+      const watchVariants =
+        variantsByReference.get(watch.reference) || [null];
+
+      watchVariants.forEach((variant) => {
+        rows.push([
+          watch.reference,
+          watch.brand,
+          watch.family,
+          watch.model,
+          watch.active,
+          watch.price_mode,
+          watch.auto_new_price_million_vnd,
+          watch.auto_used_price_million_vnd,
+          watch.manual_new_price_million_vnd,
+          watch.manual_used_price_million_vnd,
+          watch.new_price_million_vnd,
+          watch.used_price_million_vnd,
+          watch.price_source,
+          watch.source_url,
+          variant?.variant_key,
+          variant?.variant_label,
+          variant?.bracelet,
+          variant?.dial,
+          variant?.price_mode,
+          variant?.new_price_million_vnd,
+          variant?.used_price_million_vnd,
+          variant?.source_new_price_man_yen ??
+            watch.source_new_price_man_yen,
+          variant?.source_used_price_man_yen ??
+            watch.source_used_price_man_yen,
+          variant?.fx_jpy_vnd ??
+            watch.source_exchange_rate_jpy_vnd,
+          variant?.buffer_man_yen,
+          variant?.image_url || watch.image_url,
+          variant?.updated_at || watch.updated_at,
+        ]);
+      });
+    });
+
+    downloadCsvFile(rows);
+    adminMessage.textContent =
+      `Đã tải bản sao lưu ${priceRows.length} mã Reference.`;
+  } catch (error) {
+    console.error(error);
+    adminMessage.textContent =
+      error.message || "Không thể tạo bản sao lưu.";
+  } finally {
+    backupPurchasePricesButton.disabled = false;
+    backupPurchasePricesButton.textContent = "Sao lưu CSV";
+  }
+}
+
+backupPurchasePricesButton.addEventListener(
+  "click",
+  backupPurchasePrices,
+);
 
 /* ===== QUẢN LÝ SẢN PHẨM ===== */
 
@@ -1325,6 +1544,10 @@ document
   });
 
 priceSearchInput.addEventListener("input", renderFilteredPrices);
+priceBrandFilter.addEventListener("change", () => {
+  updatePriceFamilyFilter();
+  renderFilteredPrices();
+});
 priceFamilyFilter.addEventListener("change", renderFilteredPrices);
 
 async function startAdmin() {

@@ -139,6 +139,10 @@
             placeholder="Tìm Reference hoặc tên đồng hồ"
           >
 
+          <select id="price-brand-filter" aria-label="Lọc theo thương hiệu">
+            <option value="">Tất cả thương hiệu</option>
+          </select>
+
           <select id="price-family-filter" aria-label="Lọc theo dòng đồng hồ">
             <option value="">Tất cả dòng đồng hồ</option>
           </select>
@@ -146,6 +150,10 @@
           <div class="admin-toolbar-actions">
             <button id="new-manual-purchase-button" type="button">
               Thêm mã thu mua thủ công
+            </button>
+
+            <button id="backup-purchase-prices" type="button">
+              Sao lưu CSV
             </button>
 
             <button id="reload-prices" type="button">

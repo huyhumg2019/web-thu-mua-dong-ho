@@ -105,6 +105,7 @@
 
 .admin-toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 15px;
   padding: 18px;
@@ -124,7 +125,11 @@
 }
 
 .admin-toolbar select {
-  width: min(280px, 100%);
+  width: min(240px, 100%);
+}
+
+#price-brand-filter {
+  width: min(220px, 100%);
 }
 
 .family-group-row td {
@@ -378,6 +383,7 @@
 
 .admin-toolbar-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
