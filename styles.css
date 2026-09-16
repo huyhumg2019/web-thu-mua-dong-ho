@@ -274,13 +274,14 @@
 /* Nhóm các biến thể cùng Reference để so sánh trực tiếp */
 .track.variant-results{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(250px,290px));
+  justify-content:center;
   gap:24px;
   overflow:visible;
 }
 .track.variant-results .watch-card{
   width:100%;
-  max-width:none;
+  max-width:290px;
 }
 .track.variant-results .watch-card h3{
   margin-bottom:4px;
