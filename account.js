@@ -287,9 +287,9 @@ async function openCustomerRequestDetail(request) {
       information,
       "Giá mong muốn",
       item.expected_price_million_vnd
-        ? `${new Intl.NumberFormat("vi-VN").format(
-            item.expected_price_million_vnd,
-          )} triệu VND`
+        ? `${Math.round(
+            Number(item.expected_price_million_vnd) * 1000000,
+          ).toLocaleString("en-US")}đ`
         : "Không cung cấp",
     );
 
