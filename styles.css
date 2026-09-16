@@ -271,6 +271,14 @@
   vertical-align: middle;
 }
 
+.family-card img{
+  width:100%;
+  height:310px;
+  padding:34px;
+  object-fit:contain;
+  object-position:center;
+}
+
 /* Nhóm các biến thể cùng Reference để so sánh trực tiếp */
 .track.variant-results{
   display:grid;
