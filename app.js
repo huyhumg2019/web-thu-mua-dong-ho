@@ -166,7 +166,7 @@ supabasePublicClient
       card.className = "watch-card sale-card";
 
       card.innerHTML = `
-        <span class="stock-tag">HÀNG CÓ SẴN</span>
+        <span class="stock-tag">CÓ SẴN</span>
 
         <img
           src="${product.image}"
