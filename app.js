@@ -227,6 +227,9 @@ function getFamilyCatalogImage(brand, family) {
   return catalogWatch?.image || family.image;
 }
 
+const familyPopularity = createFamilyPopularity(supabasePublicClient);
+void familyPopularity.refresh();
+
 function showBrand(brand) {
   selectedBuyBrand = brand;
   showingBuyReferences = false;
@@ -243,7 +246,8 @@ function showBrand(brand) {
 
   track.innerHTML = "";
 
-  buyModels[brand.slug].forEach((family) => {
+  track.classList.remove("variant-results");
+  familyPopularity.sort(brand.slug, buyModels[brand.slug]).forEach((family) => {
     const card = document.createElement("button");
 
     card.className = "watch-card family-card";
@@ -266,6 +270,7 @@ function showBrand(brand) {
     `;
 
     card.addEventListener("click", () => {
+      void familyPopularity.record(brand.slug, family.name);
       showFamilyReferences(brand, family);
     });
 
@@ -275,6 +280,8 @@ function showBrand(brand) {
   area.scrollIntoView({
     behavior: "smooth",
   });
+  // Load fresh counts for the next visit without moving visible cards.
+  void familyPopularity.refresh();
 }
 
 function showFamilyReferences(brand, family) {
