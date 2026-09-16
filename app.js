@@ -1120,8 +1120,10 @@ function setCatalogMode(mode) {
   const stockSection = document.getElementById("available");
   const brandModelsSection = document.getElementById("brand-models");
 
-  buySection.hidden = isStock;
-  stockSection.hidden = !isStock;
+  // Trang chủ luôn giữ cả khu Thu mua và Hàng có sẵn.
+  // Menu chỉ cuộn đến khu tương ứng, không ẩn dữ liệu còn lại.
+  buySection.hidden = false;
+  stockSection.hidden = false;
   brandModelsSection.hidden = true;
 
   document.querySelectorAll("[data-catalog-mode]").forEach((link) => {
