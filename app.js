@@ -98,7 +98,18 @@ supabasePublicClient
     console.error(error);
   });
 let saleItems = [];
-const vnd=n=>n?new Intl.NumberFormat('vi-VN').format(n)+' triệu VND':'Liên hệ';
+const vnd = (value) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return "Liên hệ";
+  }
+
+  return (
+    Math.round(number * 1000000).toLocaleString("en-US") +
+    "đ"
+  );
+};
 const brandTrack=document.getElementById('brand-track');
 brands.forEach(b=>{const el=document.createElement('button');el.className='watch-card brand-card';el.innerHTML=`<span class="card-label">THU MUA</span><img src="${b.image}" alt="${b.name}" loading="lazy"><h3>${b.name}</h3><p>${b.copy}</p><small>Xem chi tiết →</small>`;el.onclick=()=>showBrand(b);brandTrack.appendChild(el)});
 const saleTrack = document.getElementById("sale-track");
