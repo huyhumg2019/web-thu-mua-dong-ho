@@ -341,3 +341,39 @@
   color:var(--ink);
   font-weight:600;
 }
+
+/* Nhãn trạng thái nổi bật nhưng vẫn giữ phong cách giao diện cũ */
+.card-label,
+.stock-tag {
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--red);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.14em;
+}
+
+.card-label {
+  background: var(--red);
+  color: #ffffff;
+}
+
+.stock-tag {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--red);
+}
+
+.card-label::before,
+.stock-tag::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
