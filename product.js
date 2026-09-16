@@ -13,8 +13,8 @@ function formatPrice(price) {
   }
 
   return (
-    new Intl.NumberFormat("vi-VN").format(number) +
-    " triệu VND"
+    Math.round(number * 1000000).toLocaleString("en-US") +
+    "đ"
   );
 }
 
