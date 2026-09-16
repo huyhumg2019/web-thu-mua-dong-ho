@@ -286,6 +286,15 @@
 .track.variant-results .watch-card h3{
   margin-bottom:4px;
 }
+.track.variant-results .reference-card{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+.track.variant-results .reference-card .two-prices{
+  width:100%;
+  margin-top:auto;
+}
 .track.variant-results .watch-card p + p{
   margin-top:3px;
 }
