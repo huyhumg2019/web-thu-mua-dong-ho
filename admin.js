@@ -675,7 +675,7 @@ function formatPurchasePrice(value) {
     return "Liên hệ";
   }
 
-  return `${number.toLocaleString("vi-VN")} triệu`;
+  return `${Math.round(number * 1000000).toLocaleString("en-US")}đ`;
 }
 
 function createPricePairCell(newPrice, usedPrice) {
@@ -1170,7 +1170,7 @@ function formatSalePrice(price) {
     return "";
   }
 
-  return `${number.toLocaleString("vi-VN")} triệu`;
+  return `${Math.round(number * 1000000).toLocaleString("en-US")}đ`;
 }
 
 function renderProducts(rows) {
