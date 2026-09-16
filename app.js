@@ -198,6 +198,24 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function getFamilyCatalogImage(brand, family) {
+  const familyNames = family.matches || [family.name];
+  const catalogWatch = csvPrices.find((watch) => {
+    return (
+      watch.image &&
+      normalizeText(watch.brand) ===
+        normalizeText(brand.name) &&
+      familyNames.some(
+        (familyName) =>
+          normalizeText(watch.family) ===
+          normalizeText(familyName),
+      )
+    );
+  });
+
+  return catalogWatch?.image || family.image;
+}
+
 function showBrand(brand) {
   selectedBuyBrand = brand;
   showingBuyReferences = false;
@@ -219,9 +237,14 @@ function showBrand(brand) {
 
     card.className = "watch-card family-card";
 
+    const familyImage = getFamilyCatalogImage(
+      brand,
+      family,
+    );
+
     card.innerHTML = `
       <img
-        src="${family.image}"
+        src="${familyImage}"
         alt="${family.name}"
         loading="lazy"
       >
