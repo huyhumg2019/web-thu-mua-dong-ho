@@ -198,13 +198,27 @@ function renderSyncStatus(run) {
     return;
   }
 
-  const isRunning = ["queued", "in_progress"].includes(run.status);
+  const isRunning = run.status !== "completed";
   const isSuccess = run.conclusion === "success";
+  const pendingLabels = {
+    queued: "Đang chờ chạy",
+    pending: "Đang chờ chạy",
+    waiting: "Đang chờ",
+    requested: "Đã yêu cầu chạy",
+    in_progress: "Đang chạy",
+  };
+  const completedLabels = {
+    success: "Thành công",
+    failure: "Thất bại",
+    cancelled: "Đã hủy",
+    timed_out: "Quá thời gian",
+    skipped: "Đã bỏ qua",
+    neutral: "Đã hoàn tất",
+    action_required: "Cần xử lý trên GitHub",
+  };
   const stateText = isRunning
-    ? "Đang chạy"
-    : isSuccess
-      ? "Thành công"
-      : "Thất bại";
+    ? pendingLabels[run.status] || "Đang chờ trạng thái"
+    : completedLabels[run.conclusion] || "Chưa xác định kết quả";
 
   syncStatus.classList.add(
     isRunning ? "running" : isSuccess ? "success" : "failure",
