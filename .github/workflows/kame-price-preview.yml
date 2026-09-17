@@ -10,6 +10,8 @@ on:
       - main
     paths:
       - "scripts/sync-kame-prices.mjs"
+      - "scripts/watchnian.mjs"
+      - "scripts/test-watchnian.mjs"
       - ".github/workflows/kame-price-preview.yml"
 
   workflow_dispatch:
@@ -55,6 +57,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Kiểm tra bộ đọc Watchnian
+        run: node scripts/test-watchnian.mjs
 
       - name: Kiểm tra bộ đọc Kame trên Pull Request
         if: github.event_name == 'pull_request'
