@@ -336,12 +336,12 @@ function renderBufferLabel() {
 
   if (!Number.isFinite(buffer) || buffer < 0) {
     syncBufferLabel.textContent =
-      "Nhập số 万円 cần trừ khỏi giá Kame.";
+      "Nhập số 万円 cần trừ khỏi giá nguồn (Kame và Watchnian).";
     return;
   }
 
   syncBufferLabel.textContent =
-    `Giá thu mua sử dụng: Giá Kame − ${buffer}万円.`;
+    `Giá thu mua sử dụng: Giá nguồn − ${buffer}万円 (Kame và Watchnian).`;
 }
 
 previewSyncButton.addEventListener("click", () => {

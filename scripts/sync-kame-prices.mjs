@@ -1,4 +1,5 @@
 import { writeFile } from "node:fs/promises";
+import { fetchWatchnian, missingFromKame } from './watchnian.mjs';
 
 const KAME_URL =
   "https://www.kame-kichi.com/buy/examples";
@@ -468,9 +469,7 @@ function calculateVndMillions(
     0,
   );
 
-  return Math.round(
-    (safeManYen * 10_000 * jpyToVnd) / 1_000_000,
-  );
+  return Math.round(safeManYen * 10_000 * jpyToVnd) / 1_000_000;
 }
 
 function isSuspiciousJump(current, next, hasHistory) {
@@ -728,6 +727,7 @@ async function main() {
   }
 
   const response = await fetch(KAME_URL, {
+    signal: AbortSignal.timeout(30000),
     headers: {
       "User-Agent": USER_AGENT,
       "Accept-Language": "ja,en;q=0.8",
@@ -744,6 +744,19 @@ async function main() {
   const listings = parseListings(html);
   const images = parseImages(html);
   const targets = buildTargets(listings);
+  const kameReferences = new Set(listings.map(row => row.reference));
+  let watchnianWarning = null;
+  try {
+    const extra = missingFromKame(await fetchWatchnian(), listings);
+    for (const listing of extra) {
+      targets.push({ reference: listing.reference, variantKey: listing.variantKey,
+        variantLabel: listing.variantLabel, bracelet: listing.bracelet,
+        watchnianListing: listing, displayOrder: 100 });
+    }
+  } catch (error) {
+    watchnianWarning = error.message;
+    console.warn('Watchnian: ' + error.message + '; tiếp tục Kame, giữ dữ liệu Watchnian cũ.');
+  }
 
   if (listings.length < 20 || targets.length < 20) {
     throw new Error(
@@ -759,7 +772,7 @@ async function main() {
     existingRows =
       (await supabaseRequest(
         "/rest/v1/purchase_prices" +
-          "?select=reference,brand,family,model,active,price_mode," +
+          "?select=reference,brand,family,model,active,price_mode,price_source," +
           "new_price_million_vnd,used_price_million_vnd," +
           "auto_new_price_million_vnd," +
           "auto_used_price_million_vnd," +
@@ -772,7 +785,7 @@ async function main() {
     existingVariants =
       (await supabaseRequest(
         "/rest/v1/purchase_price_variants" +
-          "?select=reference,variant_key,active,price_mode",
+          "?select=reference,variant_key,active,price_mode,source_name",
       )) || [];
 
     if (process.env.USE_SAVED_SYNC_SETTINGS === "true") {
@@ -825,7 +838,18 @@ async function main() {
       target.sourceReference || target.reference;
     const current =
       existingByReference.get(target.reference);
-    const listing = chooseListing(listings, target);
+    const listing = target.watchnianListing || chooseListing(listings, target);
+    const sourceName = target.watchnianListing ? 'watchnian' : 'kame-kichi';
+    const sourceUrl = target.watchnianListing?.sourceUrl || KAME_URL;
+    if (target.watchnianListing && (
+      current?.price_mode === 'manual' ||
+        (current && !['watchnian', 'kame-kichi'].includes(current.price_source)) ||
+        existingVariants.some(v => v.reference === target.reference &&
+          v.variant_key === target.variantKey && v.price_mode === 'manual')
+    )) {
+      report.push({ reference: target.reference, status: 'skipped-protected-row', source: sourceName });
+      continue;
+    }
 
     if (!listing) {
       let status = "not-found";
@@ -883,7 +907,7 @@ async function main() {
     }
 
     const keywords = target.dialKeywords || [];
-    const sourceImageUrl = findImage(
+    const sourceImageUrl = target.watchnianListing?.sourceImageUrl || findImage(
       images,
       sourceReference,
       keywords,
@@ -930,6 +954,8 @@ async function main() {
     }
 
     const reportRow = {
+      source: sourceName,
+      sourceUrl,
       reference: target.reference,
       sourceReference,
       variant: listing.variant,
@@ -956,7 +982,9 @@ async function main() {
       }
 
       const now = new Date().toISOString();
-      const identity = deriveCatalogIdentity(listing);
+      const identity = target.watchnianListing
+        ? { family: 'Sky-Dweller', model: 'Sky-Dweller 42' }
+        : deriveCatalogIdentity(listing);
       const changes = {
         reference: target.reference,
         brand: "Rolex",
@@ -968,8 +996,8 @@ async function main() {
         used_price_million_vnd:
           current?.used_price_million_vnd ?? autoUsedPrice ?? 0,
         auto_new_price_million_vnd: autoNewPrice,
-        price_source: "kame-kichi",
-        source_url: KAME_URL,
+        price_source: sourceName,
+        source_url: sourceUrl,
         source_checked_at: now,
         source_last_success_at: now,
         source_new_price_man_yen:
@@ -994,7 +1022,8 @@ async function main() {
         changes.image_url = localImageUrl;
       }
 
-      await supabaseRequest(
+      // A supplemental variant must not replace the Kame parent price/image.
+      if (!target.watchnianListing || !kameReferences.has(target.reference)) await supabaseRequest(
         "/rest/v1/purchase_prices?on_conflict=reference",
         {
           method: "POST",
@@ -1012,14 +1041,14 @@ async function main() {
         variant_label:
           target.variantLabel ||
           localizeKameVariant(listing.variant),
-        dial: localizeKameVariant(listing.variant),
+        dial: target.watchnianListing?.variantLabel || localizeKameVariant(listing.variant),
         display_order:
           target.displayOrder ?? target.occurrence ?? 0,
         active: true,
         auto_new_price_million_vnd: autoNewPrice,
         auto_used_price_million_vnd: autoUsedPrice,
-        source_name: "kame-kichi",
-        source_url: KAME_URL,
+        source_name: sourceName,
+        source_url: sourceUrl,
         source_reference: sourceReference,
         source_new_price_man_yen: listing.newPriceManYen,
         source_used_price_man_yen: listing.usedPriceManYen,
@@ -1079,6 +1108,7 @@ async function main() {
     for (const row of existingRows) {
       if (
         row.active &&
+        row.price_source === 'kame-kichi' &&
         row.price_mode !== "manual" &&
         !syncedReferences.has(row.reference)
       ) {
@@ -1103,12 +1133,17 @@ async function main() {
     }
 
     for (const variant of existingVariants) {
+      const watchnianKey = variant.variant_key.match(/^watchnian-([a-z]+)-(oyster|jubilee|oysterflex)$/);
+      const replacedByKame = variant.source_name === 'watchnian' && watchnianKey &&
+        missingFromKame([{ reference: variant.reference, dial: watchnianKey[1],
+          bracelet: { oyster:'Oyster', jubilee:'Jubilee', oysterflex:'Oysterflex' }[watchnianKey[2]] }], listings).length === 0;
       const variantIdentity =
         `${variant.reference}\u0000${variant.variant_key}`;
 
       if (
         rolexReferences.has(variant.reference) &&
         variant.active &&
+        (variant.source_name === 'kame-kichi' || replacedByKame) &&
         variant.price_mode !== "manual" &&
         !syncedVariants.has(variantIdentity)
       ) {
@@ -1148,6 +1183,7 @@ async function main() {
   }
 
   const output = {
+    watchnianWarning,
     generatedAt: new Date().toISOString(),
     source: KAME_URL,
     applyChanges,
