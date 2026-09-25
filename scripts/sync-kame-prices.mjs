@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { fetchWatchnian, missingFromKame } from './watchnian.mjs';
+import { isManagedVariant, isManualReference } from './purchase-sync-policy.mjs';
 
 const KAME_URL =
   "https://www.kame-kichi.com/buy/examples";
@@ -751,7 +752,8 @@ async function main() {
     for (const listing of extra) {
       targets.push({ reference: listing.reference, variantKey: listing.variantKey,
         variantLabel: listing.variantLabel, bracelet: listing.bracelet,
-        watchnianListing: listing, displayOrder: 100 });
+        sourceListing: listing, catalogFamily: 'Sky-Dweller',
+        catalogModel: 'Sky-Dweller 42', displayOrder: 100 });
     }
   } catch (error) {
     watchnianWarning = error.message;
@@ -769,24 +771,33 @@ async function main() {
   let existingVariants = [];
 
   if (applyChanges) {
-    existingRows =
-      (await supabaseRequest(
+    // PostgREST caps one response at its configured row limit.
+    // Read every page so older manual edits and deleted variants stay protected.
+    for (let offset = 0; ; offset += 1000) {
+      const page = (await supabaseRequest(
         "/rest/v1/purchase_prices" +
           "?select=reference,brand,family,model,active,price_mode,price_source," +
           "new_price_million_vnd,used_price_million_vnd," +
-          "auto_new_price_million_vnd," +
-          "auto_used_price_million_vnd," +
-          "source_last_success_at," +
-          "source_exchange_rate_jpy_vnd," +
+          "auto_new_price_million_vnd,auto_used_price_million_vnd," +
+          "source_last_success_at,source_exchange_rate_jpy_vnd," +
           "source_exchange_rate_checked_at" +
-          "&brand=eq.Rolex",
+          "&brand=eq.Rolex&order=reference.asc" +
+          `&limit=1000&offset=${offset}`,
       )) || [];
+      existingRows.push(...page);
+      if (page.length < 1000) break;
+    }
 
-    existingVariants =
-      (await supabaseRequest(
+    for (let offset = 0; ; offset += 1000) {
+      const page = (await supabaseRequest(
         "/rest/v1/purchase_price_variants" +
-          "?select=reference,variant_key,active,price_mode,source_name",
+          "?select=reference,variant_key,active,price_mode,source_name" +
+          "&order=reference.asc,variant_key.asc" +
+          `&limit=1000&offset=${offset}`,
       )) || [];
+      existingVariants.push(...page);
+      if (page.length < 1000) break;
+    }
 
     if (process.env.USE_SAVED_SYNC_SETTINGS === "true") {
       const savedSettings =
@@ -838,18 +849,42 @@ async function main() {
       target.sourceReference || target.reference;
     const current =
       existingByReference.get(target.reference);
-    const listing = target.watchnianListing || chooseListing(listings, target);
-    const sourceName = target.watchnianListing ? 'watchnian' : 'kame-kichi';
-    const sourceUrl = target.watchnianListing?.sourceUrl || KAME_URL;
-    if (target.watchnianListing && (
-      current?.price_mode === 'manual' ||
-        (current && !['watchnian', 'kame-kichi'].includes(current.price_source) &&
-          !(current.price_mode === 'auto' && !current.price_source &&
-            !current.auto_new_price_million_vnd && !current.auto_used_price_million_vnd)) ||
-        existingVariants.some(v => v.reference === target.reference &&
-          v.variant_key === target.variantKey && v.price_mode === 'manual')
-    )) {
-      report.push({ reference: target.reference, status: 'skipped-protected-row', source: sourceName });
+    const listing = target.sourceListing || chooseListing(listings, target);
+    const sourceName = target.sourceListing?.source || 'kame-kichi';
+    const sourceUrl = target.sourceListing?.sourceUrl || KAME_URL;
+    if (isManualReference(current)) {
+      report.push({
+        reference: target.reference,
+        status: "skipped-manual-reference",
+        source: sourceName,
+      });
+      continue;
+    }
+    const variantKey = target.variantKey || "default";
+    const existingVariant = existingVariants.find(
+      (variant) => variant.reference === target.reference &&
+        variant.variant_key === variantKey,
+    );
+    // An inactive variant is a deliberate deletion. Manual prices are owned by staff.
+    if (isManagedVariant(existingVariant)) {
+      report.push({
+        reference: target.reference,
+        variantKey,
+        status: "skipped-managed-variant",
+        source: sourceName,
+      });
+      continue;
+    }
+    if (target.sourceListing && current &&
+      !["watchnian", "kame-kichi"].includes(current.price_source) &&
+      !(current.price_mode === "auto" && !current.price_source &&
+        !current.auto_new_price_million_vnd && !current.auto_used_price_million_vnd)) {
+      report.push({
+        reference: target.reference,
+        variantKey,
+        status: "skipped-protected-source",
+        source: sourceName,
+      });
       continue;
     }
 
@@ -909,7 +944,7 @@ async function main() {
     }
 
     const keywords = target.dialKeywords || [];
-    const sourceImageUrl = target.watchnianListing?.sourceImageUrl || findImage(
+    const sourceImageUrl = target.sourceListing?.sourceImageUrl || findImage(
       images,
       sourceReference,
       keywords,
@@ -984,8 +1019,9 @@ async function main() {
       }
 
       const now = new Date().toISOString();
-      const identity = target.watchnianListing
-        ? { family: 'Sky-Dweller', model: 'Sky-Dweller 42' }
+      const identity = target.sourceListing
+        ? { family: target.catalogFamily || listing.model,
+            model: target.catalogModel || listing.model }
         : deriveCatalogIdentity(listing);
       const changes = {
         reference: target.reference,
@@ -1025,7 +1061,8 @@ async function main() {
       }
 
       // A supplemental variant must not replace the Kame parent price/image.
-      if (!target.watchnianListing || !kameReferences.has(target.reference)) await supabaseRequest(
+      if (current?.price_mode !== "manual" &&
+        (!target.sourceListing || !kameReferences.has(target.reference))) await supabaseRequest(
         "/rest/v1/purchase_prices?on_conflict=reference",
         {
           method: "POST",
@@ -1043,7 +1080,7 @@ async function main() {
         variant_label:
           target.variantLabel ||
           localizeKameVariant(listing.variant),
-        dial: target.watchnianListing?.variantLabel || localizeKameVariant(listing.variant),
+        dial: target.sourceListing?.variantLabel || localizeKameVariant(listing.variant),
         display_order:
           target.displayOrder ?? target.occurrence ?? 0,
         active: true,

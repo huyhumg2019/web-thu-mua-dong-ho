@@ -1,4 +1,4 @@
-let watchnianVariants = [];
+let purchaseVariants = [];
 const config = window.REWATCH_SUPABASE;
 
 const supabaseClient = supabase.createClient(
@@ -286,14 +286,14 @@ async function requestKameSync(applyChanges) {
   }
 
   if (!Number.isFinite(buffer) || buffer < 0) {
-    syncMessage.textContent = "Mức trừ giá Kame phải từ 0 trở lên.";
+    syncMessage.textContent = "Mức trừ giá nguồn phải từ 0 trở lên.";
     return;
   }
 
   if (
     applyChanges &&
     !window.confirm(
-      "Đồng bộ giá và ảnh Kame vào website ngay bây giờ?",
+      "Đồng bộ giá và ảnh từ các nguồn vào website ngay bây giờ?",
     )
   ) {
     return;
@@ -351,12 +351,12 @@ function renderBufferLabel() {
 
   if (!Number.isFinite(buffer) || buffer < 0) {
     syncBufferLabel.textContent =
-      "Nhập số 万円 cần trừ khỏi giá nguồn (Kame và Watchnian).";
+      "Nhập số 万円 cần trừ khỏi giá nguồn tự động.";
     return;
   }
 
   syncBufferLabel.textContent =
-    `Giá thu mua sử dụng: Giá nguồn − ${buffer}万円 (Kame và Watchnian).`;
+    `Giá thu mua sử dụng: Giá nguồn − ${buffer}万円 (áp dụng cho các nguồn tự động).`;
 }
 
 previewSyncButton.addEventListener("click", () => {
@@ -519,12 +519,21 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
 async function loadPrices() {
   adminMessage.textContent = "Đang tải dữ liệu giá...";
 
-  const { data, error } = await supabaseClient
-    .from("purchase_prices")
-    .select("*")
-    .order("brand")
-    .order("family")
-    .order("reference");
+  const pricePages = [];
+  let error = null;
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseClient
+      .from("purchase_prices")
+      .select("*")
+      .order("reference")
+      .range(offset, offset + 999);
+    if (page.error) {
+      error = page.error;
+      break;
+    }
+    pricePages.push(...(page.data || []));
+    if (!page.data || page.data.length < 1000) break;
+  }
 
   if (error) {
     console.error(error);
@@ -535,22 +544,32 @@ async function loadPrices() {
     return;
   }
 
-  const variantResult = await supabaseClient
-    .from("purchase_price_variants")
-    .select("*")
-    .eq("source_name", "watchnian")
-    .eq("active", true)
-    .order("reference")
-    .order("variant_key");
-  watchnianVariants = variantResult.error ? [] : (variantResult.data || []);
-  if (variantResult.error) console.error(variantResult.error);
-  priceRows = data || [];
+  const variantPages = [];
+  let variantError = null;
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseClient
+      .from("purchase_price_variants")
+      .select("*")
+      .eq("active", true)
+      .order("reference")
+      .order("variant_key")
+      .range(offset, offset + 999);
+    if (page.error) {
+      variantError = page.error;
+      break;
+    }
+    variantPages.push(...(page.data || []));
+    if (!page.data || page.data.length < 1000) break;
+  }
+  purchaseVariants = variantError ? [] : variantPages;
+  if (variantError) console.error(variantError);
+  priceRows = pricePages;
   updatePriceFilters();
   renderFilteredPrices();
 
   adminMessage.textContent =
-    `Đã tải ${priceRows.length} mã Reference, ${watchnianVariants.length} phiên bản Watchnian.` +
-    (variantResult.error ? " Không tải được chi tiết phiên bản Watchnian." : "");
+    `Đã tải ${priceRows.length} mã Reference, ${purchaseVariants.length} phiên bản.` +
+    (variantError ? " Không tải được chi tiết phiên bản." : "");
 }
 
 function getPriceBrand(watch) {
@@ -993,7 +1012,7 @@ function renderPrices(rows) {
     row.appendChild(actionCell);
 
     priceTableBody.appendChild(row);
-    for (const variant of watchnianVariants.filter(v => v.reference === watch.reference)) {
+    for (const variant of purchaseVariants.filter(v => v.reference === watch.reference)) {
       const detailRow = document.createElement("tr");
       detailRow.appendChild(createCell(watch.reference));
       detailRow.appendChild(createCell(variant.variant_label || variant.variant_key));
@@ -1002,6 +1021,9 @@ function renderPrices(rows) {
       variantMode.className = "price-mode-select";
       variantMode.innerHTML = '<option value="auto">Tự động</option><option value="manual">Thủ công</option>';
       variantMode.value = variant.price_mode || "auto";
+      const sourceLabel = document.createElement("small");
+      sourceLabel.textContent = variant.source_name || "Thêm thủ công";
+      variantModeCell.appendChild(sourceLabel);
       variantModeCell.appendChild(variantMode);
       detailRow.appendChild(variantModeCell);
       detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
@@ -1046,11 +1068,17 @@ function renderPrices(rows) {
             changes.manual_new_price_million_vnd = Math.floor(newValue);
             changes.manual_used_price_million_vnd = Math.floor(usedValue);
           }
-          const { data: saved, error } = await supabaseClient.from("purchase_price_variants")
-            .update(changes).eq("reference", variant.reference).eq("variant_key", variant.variant_key)
-            .select("reference");
+          const { data: saved, error } = await supabaseClient.rpc(
+            "manage_purchase_variant", {
+              p_reference: variant.reference,
+              p_variant_key: variant.variant_key,
+              p_action: manual ? "manual" : "auto",
+              p_new_price: manual ? changes.manual_new_price_million_vnd : null,
+              p_used_price: manual ? changes.manual_used_price_million_vnd : null,
+            },
+          );
           if (error) throw error;
-          if (!saved?.length) throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
+          if (saved !== true) throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
           await loadPrices();
           adminMessage.textContent = "Đã lưu " + variant.reference + " · " + variant.variant_label;
         } catch (error) {
@@ -1060,6 +1088,40 @@ function renderPrices(rows) {
         }
       });
       variantAction.appendChild(variantSave);
+      if (currentProfile?.role === "admin") {
+        const variantDelete = document.createElement("button");
+        variantDelete.type = "button";
+        variantDelete.className = "danger-action";
+        variantDelete.textContent = "Xóa";
+        variantDelete.addEventListener("click", async () => {
+          const label = variant.variant_label || variant.variant_key;
+          if (!window.confirm("Xóa phiên bản " + variant.reference +
+              " · " + label + "? Các phiên bản khác giữ nguyên.")) return;
+          variantDelete.disabled = true;
+          variantSave.disabled = true;
+          variantDelete.textContent = "Đang xóa...";
+          try {
+            const { data: removed, error } = await supabaseClient.rpc(
+              "manage_purchase_variant", {
+                p_reference: variant.reference,
+                p_variant_key: variant.variant_key,
+                p_action: "delete",
+              },
+            );
+            if (error) throw error;
+            if (removed !== true) throw new Error("Không xóa được phiên bản. Kiểm tra quyền tài khoản.");
+            await loadPrices();
+            adminMessage.textContent = "Đã xóa " + variant.reference + " · " + label + ".";
+          } catch (error) {
+            adminMessage.textContent = error.message || "Không xóa được phiên bản.";
+          } finally {
+            variantDelete.disabled = false;
+            variantSave.disabled = false;
+            variantDelete.textContent = "Xóa";
+          }
+        });
+        variantAction.appendChild(variantDelete);
+      }
       detailRow.appendChild(variantAction);
       priceTableBody.appendChild(detailRow);
     }
@@ -1147,10 +1209,10 @@ async function backupPurchasePrices() {
       "Chế độ biến thể",
       "Giá biến thể mới (triệu VND)",
       "Giá biến thể đã dùng (triệu VND)",
-      "Giá Kame mới (万円)",
-      "Giá Kame đã dùng (万円)",
+      "Giá nguồn mới (万円)",
+      "Giá nguồn đã dùng (万円)",
       "Tỷ giá JPY/VND",
-      "Mức trừ Kame (万円)",
+      "Mức trừ giá nguồn (万円)",
       "URL ảnh",
       "Cập nhật lúc",
     ];
