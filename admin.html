@@ -16,6 +16,7 @@
 
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="admin.css?v=20260925-image-restore">
+    <link rel="stylesheet" href="news.css?v=20260925-news">
   </head>
 
   <body>
@@ -67,6 +68,7 @@
 
           <div class="admin-heading-actions">
             <a href="index.html" target="_blank">Xem website</a>
+            <a href="#admin-news-title">Đăng tin tức</a>
             <button id="logout-button" type="button">Đăng xuất</button>
           </div>
         </div>
@@ -415,11 +417,34 @@
 
   <p id="product-admin-message" role="status"></p>
 </section>
+        <section class="admin-news-section" aria-labelledby="admin-news-title">
+          <div class="admin-section-heading">
+            <div><span class="kicker">BÀI VIẾT HẰNG NGÀY</span><h2 id="admin-news-title">Quản lý tin tức</h2></div>
+            <a href="news.html" target="_blank" rel="noopener">Xem trang tin tức →</a>
+          </div>
+          <p>Viết bản nháp hoặc đăng bài kèm tối đa 8 ảnh. Ảnh đầu tiên sẽ là ảnh đại diện.</p>
+          <form id="news-admin-form" class="admin-entry-form">
+            <input id="news-edit-id" type="hidden">
+            <div class="admin-form-grid">
+              <label>Tiêu đề <input id="news-title" type="text" maxlength="180" required></label>
+              <label>Đường dẫn bài viết <input id="news-slug" type="text" placeholder="Tự tạo từ tiêu đề" pattern="[a-z0-9]+(-[a-z0-9]+)*" title="Chỉ dùng chữ thường không dấu, số và dấu gạch ngang"></label>
+              <label>Trạng thái <select id="news-status"><option value="draft">Bản nháp</option><option value="published">Đăng công khai</option></select></label>
+            </div>
+            <label class="news-form-field">Tóm tắt <textarea id="news-excerpt" rows="2" maxlength="500" placeholder="Hiện trên thẻ bài viết"></textarea></label>
+            <label class="news-form-field">Nội dung bài viết <textarea id="news-body" rows="10" minlength="10" required placeholder="Viết nội dung tin tức tại đây..."></textarea></label>
+            <label class="news-form-field">Ảnh bài viết <input id="news-images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple><small>JPG, PNG, WebP hoặc AVIF; tối đa 5 MB mỗi ảnh.</small></label>
+            <div id="news-existing-images" class="news-existing-images"></div>
+            <div class="admin-form-actions"><button type="submit" id="news-save-button">Lưu bài viết</button><button type="button" id="news-reset-button">Viết bài mới</button></div>
+          </form>
+          <p id="news-admin-message" role="status"></p>
+          <div id="news-admin-list" class="news-admin-list"></div>
+        </section>
       </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="admin.js?v=20260925-auto-fit-image"></script>
+    <script src="admin.js?v=20260925-news"></script>
+    <script src="news-admin.js?v=20260925-news"></script>
   </body>
 </html>

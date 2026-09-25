@@ -178,6 +178,7 @@ async function showDashboard(session) {
     loadProducts(),
     loadLatestSyncStatus(),
   ]);
+  await window.loadNewsAdmin?.();
 }
 
 /* ===== ĐỒNG BỘ KAME ===== */

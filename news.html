@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tin tức đồng hồ — LUXTIME</title>
+  <meta name="description" content="Tin tức đồng hồ và cập nhật mới từ LUXTIME.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="news.css">
+</head>
+<body>
+  <header>
+    <a class="logo" href="index.html" aria-label="LUXTIME trang chủ"><span class="logo-mark" aria-hidden="true"></span><span><strong>LUX</strong>TIME</span></a>
+    <nav><a href="index.html#buy">Thu mua</a><a href="index.html#available">Hàng có sẵn</a><a href="index.html#consign">Bán hộ</a><a href="news.html" aria-current="page">Tin tức</a><a href="index.html#contact">Liên hệ</a><a href="account.html">Tài khoản</a></nav>
+    <button class="menu" type="button" aria-label="Mở menu" aria-expanded="false">☰</button>
+  </header>
+  <main class="news-page">
+    <a class="news-back" href="index.html">← Trang chủ</a>
+    <div id="news-index">
+      <span class="kicker">LUXTIME JOURNAL</span>
+      <h1>Tin tức đồng hồ</h1>
+      <p>Thông tin mới, kiến thức và câu chuyện về đồng hồ.</p>
+      <div id="news-list" class="news-card-grid"></div>
+      <p id="news-list-message" role="status"></p>
+      <button id="news-load-more" type="button" hidden>Xem thêm bài viết</button>
+    </div>
+    <article id="news-article" class="news-article" hidden>
+      <a href="news.html" class="news-back">← Tất cả tin tức</a>
+      <span class="kicker">LUXTIME JOURNAL</span>
+      <h1 id="news-article-title"></h1>
+      <time id="news-article-date"></time>
+      <p id="news-article-excerpt" class="news-article-excerpt"></p>
+      <div id="news-article-images" class="news-article-images"></div>
+      <div id="news-article-body" class="news-article-body"></div>
+      <p id="news-article-message" role="status"></p>
+    </article>
+  </main>
+  <footer id="contact"><a class="logo footer-logo" href="index.html"><strong>LUX</strong>TIME</a><div><span class="kicker">LIÊN HỆ NHANH</span><h2>Gửi ảnh đồng hồ để được báo giá.</h2></div><div class="contacts"><a href="#">Zalo</a><a href="#">LINE</a><a href="#">Facebook</a></div><p>© 2026 LUXTIME</p></footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="news.js"></script>
+</body>
+</html>
