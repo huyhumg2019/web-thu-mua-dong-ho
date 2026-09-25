@@ -699,6 +699,42 @@ function createCell(text) {
   return cell;
 }
 
+function createWatchSummary(imageUrl, title, subtitle = "") {
+  const summary = document.createElement("div");
+  summary.className = "watch-summary-content";
+
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.className = "watch-thumbnail";
+    image.src = imageUrl;
+    image.alt = "";
+    image.width = 56;
+    image.height = 64;
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.onerror = () => { image.hidden = true; };
+    summary.appendChild(image);
+  } else {
+    const missing = document.createElement("span");
+    missing.className = "watch-thumbnail-missing";
+    missing.textContent = "Chưa có ảnh";
+    summary.appendChild(missing);
+  }
+
+  const details = document.createElement("span");
+  details.className = "watch-summary-text";
+  const heading = document.createElement("b");
+  heading.textContent = title;
+  details.appendChild(heading);
+  if (subtitle) {
+    const description = document.createElement("span");
+    description.textContent = subtitle;
+    details.appendChild(description);
+  }
+  summary.appendChild(details);
+  return summary;
+}
+
 function createPriceInput(value, label) {
   const input = document.createElement("input");
 
@@ -788,10 +824,11 @@ function renderPrices(rows) {
 
     const watchCell = document.createElement("td");
     watchCell.className = "watch-summary";
-    watchCell.innerHTML = `
-      <b>${watch.brand || ""} ${watch.family || ""}</b>
-      <span>${watch.model || ""}</span>
-    `;
+    watchCell.appendChild(createWatchSummary(
+      watch.image_url,
+      `${watch.brand || ""} ${watch.family || ""}`.trim(),
+      watch.model || "",
+    ));
     row.appendChild(watchCell);
 
     const modeCell = document.createElement("td");
@@ -1015,7 +1052,13 @@ function renderPrices(rows) {
     for (const variant of purchaseVariants.filter(v => v.reference === watch.reference)) {
       const detailRow = document.createElement("tr");
       detailRow.appendChild(createCell(watch.reference));
-      detailRow.appendChild(createCell(variant.variant_label || variant.variant_key));
+      const variantCell = document.createElement("td");
+      variantCell.className = "watch-summary";
+      variantCell.appendChild(createWatchSummary(
+        variant.image_url,
+        variant.variant_label || variant.variant_key,
+      ));
+      detailRow.appendChild(variantCell);
       const variantModeCell = document.createElement("td");
       const variantMode = document.createElement("select");
       variantMode.className = "price-mode-select";
