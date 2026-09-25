@@ -277,6 +277,12 @@
   padding:34px;
   object-fit:contain;
   object-position:center;
+  transform:scale(var(--family-image-scale, 1));
+  transform-origin:center;
+}
+
+.family-card:hover img{
+  transform:scale(var(--family-image-hover-scale, 1.035));
 }
 
 /* Nhóm các biến thể cùng Reference để so sánh trực tiếp */
