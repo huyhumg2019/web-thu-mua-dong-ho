@@ -1015,7 +1015,19 @@ async function main() {
           sourceImageUrl,
         );
       } catch (error) {
-        reportRow.imageWarning = error.message;
+        const thumbnailUrl = target.sourceListing?.sourceThumbnailUrl;
+        if (thumbnailUrl && thumbnailUrl !== sourceImageUrl) {
+          try {
+            localImageUrl = await uploadImage(
+              `${target.reference}-${target.variantKey || "default"}`,
+              thumbnailUrl,
+            );
+          } catch (fallbackError) {
+            reportRow.imageWarning = fallbackError.message;
+          }
+        } else {
+          reportRow.imageWarning = error.message;
+        }
       }
 
       const now = new Date().toISOString();
