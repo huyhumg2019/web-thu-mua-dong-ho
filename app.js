@@ -106,7 +106,7 @@ const vnd = (value) => {
   }
 
   return (
-    Math.round(number * 1000000).toLocaleString("en-US") +
+    (Math.floor(number) * 1000000).toLocaleString("vi-VN") +
     "đ"
   );
 };

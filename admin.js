@@ -700,7 +700,7 @@ function formatPurchasePrice(value) {
     return "Liên hệ";
   }
 
-  return `${Math.round(number * 1000000).toLocaleString("en-US")}đ`;
+  return `${(Math.floor(number) * 1000000).toLocaleString("vi-VN")}đ`;
 }
 
 function createPricePairCell(newPrice, usedPrice) {
@@ -997,14 +997,70 @@ function renderPrices(rows) {
       const detailRow = document.createElement("tr");
       detailRow.appendChild(createCell(watch.reference));
       detailRow.appendChild(createCell(variant.variant_label || variant.variant_key));
-      detailRow.appendChild(createCell("Watchnian · " + (variant.price_mode === "manual" ? "Thủ công" : "Tự động")));
+      const variantModeCell = document.createElement("td");
+      const variantMode = document.createElement("select");
+      variantMode.className = "price-mode-select";
+      variantMode.innerHTML = '<option value="auto">Tự động</option><option value="manual">Thủ công</option>';
+      variantMode.value = variant.price_mode || "auto";
+      variantModeCell.appendChild(variantMode);
+      detailRow.appendChild(variantModeCell);
       detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
-      detailRow.appendChild(createPricePairCell(variant.manual_new_price_million_vnd, variant.manual_used_price_million_vnd));
+      const variantInputs = document.createElement("td");
+      variantInputs.className = "manual-price-inputs";
+      const variantNew = createPriceInput(variant.manual_new_price_million_vnd, "Giá mới (triệu VND)");
+      const variantUsed = createPriceInput(variant.manual_used_price_million_vnd, "Giá cũ (triệu VND)");
+      for (const [text, input] of [["Hàng mới (triệu VND)", variantNew], ["Đã dùng (triệu VND)", variantUsed]]) {
+        const label = document.createElement("label");
+        label.textContent = text;
+        label.appendChild(input);
+        variantInputs.appendChild(label);
+      }
+      const toggleInputs = () => {
+        variantNew.disabled = variantUsed.disabled = variantMode.value !== "manual";
+      };
+      variantMode.addEventListener("change", toggleInputs);
+      toggleInputs();
+      detailRow.appendChild(variantInputs);
       detailRow.appendChild(createPricePairCell(
         variant.price_mode === "manual" ? variant.manual_new_price_million_vnd : variant.auto_new_price_million_vnd,
         variant.price_mode === "manual" ? variant.manual_used_price_million_vnd : variant.auto_used_price_million_vnd
       ));
-      detailRow.appendChild(createCell("Chi tiết phiên bản"));
+      const variantAction = document.createElement("td");
+      const variantSave = document.createElement("button");
+      variantSave.type = "button";
+      variantSave.textContent = "Lưu";
+      variantSave.className = saveButton.className;
+      variantSave.addEventListener("click", async () => {
+        const manual = variantMode.value === "manual";
+        const newValue = Number(variantNew.value);
+        const usedValue = Number(variantUsed.value);
+        if (manual && (!variantNew.value.trim() || !variantUsed.value.trim() ||
+          !Number.isFinite(newValue) || !Number.isFinite(usedValue) || newValue < 1 || usedValue < 1)) {
+          adminMessage.textContent = "Nhập đủ giá mới và cũ từ 1 triệu VND trở lên.";
+          return;
+        }
+        variantSave.disabled = true;
+        try {
+          const changes = { price_mode: variantMode.value };
+          if (manual) {
+            changes.manual_new_price_million_vnd = Math.floor(newValue);
+            changes.manual_used_price_million_vnd = Math.floor(usedValue);
+          }
+          const { data: saved, error } = await supabaseClient.from("purchase_price_variants")
+            .update(changes).eq("reference", variant.reference).eq("variant_key", variant.variant_key)
+            .select("reference");
+          if (error) throw error;
+          if (!saved?.length) throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
+          await loadPrices();
+          adminMessage.textContent = "Đã lưu " + variant.reference + " · " + variant.variant_label;
+        } catch (error) {
+          adminMessage.textContent = error.message || "Không lưu được giá phiên bản.";
+        } finally {
+          variantSave.disabled = false;
+        }
+      });
+      variantAction.appendChild(variantSave);
+      detailRow.appendChild(variantAction);
       priceTableBody.appendChild(detailRow);
     }
   });
@@ -1209,7 +1265,7 @@ function formatSalePrice(price) {
     return "";
   }
 
-  return `${Math.round(number * 1000000).toLocaleString("en-US")}đ`;
+  return `${(Math.floor(number) * 1000000).toLocaleString("vi-VN")}đ`;
 }
 
 function renderProducts(rows) {
