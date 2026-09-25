@@ -744,7 +744,7 @@ async function main() {
   const listings = parseListings(html);
   const images = parseImages(html);
   const targets = buildTargets(listings);
-  const kameReferences = new Set(listings.map(row => row.reference));
+  const kameReferences = new Set(listings.filter(row => row.newPriceManYen > 0 && row.usedPriceManYen > 0).map(row => row.reference));
   let watchnianWarning = null;
   try {
     const extra = missingFromKame(await fetchWatchnian(), listings);
@@ -843,7 +843,9 @@ async function main() {
     const sourceUrl = target.watchnianListing?.sourceUrl || KAME_URL;
     if (target.watchnianListing && (
       current?.price_mode === 'manual' ||
-        (current && !['watchnian', 'kame-kichi'].includes(current.price_source)) ||
+        (current && !['watchnian', 'kame-kichi'].includes(current.price_source) &&
+          !(current.price_mode === 'auto' && !current.price_source &&
+            !current.auto_new_price_million_vnd && !current.auto_used_price_million_vnd)) ||
         existingVariants.some(v => v.reference === target.reference &&
           v.variant_key === target.variantKey && v.price_mode === 'manual')
     )) {

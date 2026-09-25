@@ -1,3 +1,4 @@
+let watchnianVariants = [];
 const config = window.REWATCH_SUPABASE;
 
 const supabaseClient = supabase.createClient(
@@ -534,12 +535,22 @@ async function loadPrices() {
     return;
   }
 
+  const variantResult = await supabaseClient
+    .from("purchase_price_variants")
+    .select("*")
+    .eq("source_name", "watchnian")
+    .eq("active", true)
+    .order("reference")
+    .order("variant_key");
+  watchnianVariants = variantResult.error ? [] : (variantResult.data || []);
+  if (variantResult.error) console.error(variantResult.error);
   priceRows = data || [];
   updatePriceFilters();
   renderFilteredPrices();
 
   adminMessage.textContent =
-    `Đã tải ${priceRows.length} mã Reference.`;
+    `Đã tải ${priceRows.length} mã Reference, ${watchnianVariants.length} phiên bản Watchnian.` +
+    (variantResult.error ? " Không tải được chi tiết phiên bản Watchnian." : "");
 }
 
 function getPriceBrand(watch) {
@@ -982,6 +993,20 @@ function renderPrices(rows) {
     row.appendChild(actionCell);
 
     priceTableBody.appendChild(row);
+    for (const variant of watchnianVariants.filter(v => v.reference === watch.reference)) {
+      const detailRow = document.createElement("tr");
+      detailRow.appendChild(createCell(watch.reference));
+      detailRow.appendChild(createCell(variant.variant_label || variant.variant_key));
+      detailRow.appendChild(createCell("Watchnian · " + (variant.price_mode === "manual" ? "Thủ công" : "Tự động")));
+      detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
+      detailRow.appendChild(createPricePairCell(variant.manual_new_price_million_vnd, variant.manual_used_price_million_vnd));
+      detailRow.appendChild(createPricePairCell(
+        variant.price_mode === "manual" ? variant.manual_new_price_million_vnd : variant.auto_new_price_million_vnd,
+        variant.price_mode === "manual" ? variant.manual_used_price_million_vnd : variant.auto_used_price_million_vnd
+      ));
+      detailRow.appendChild(createCell("Chi tiết phiên bản"));
+      priceTableBody.appendChild(detailRow);
+    }
   });
 }
 

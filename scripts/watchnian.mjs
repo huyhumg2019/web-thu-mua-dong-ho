@@ -39,6 +39,7 @@ export function parseWatchnian(html, url) {
 export function missingFromKame(rows, kame) {
   return rows.filter(row => !kame.some(existing => {
     if (existing.reference !== row.reference) return false;
+    if (!(existing.newPriceManYen > 0 && existing.usedPriceManYen > 0)) return false;
     const id = identity(existing.variant);
     // Unknown dial/bracelet is ambiguous: prefer Kame, never guess a duplicate.
     return (!id.dial || id.dial === row.dial) && (!id.bracelet || id.bracelet === row.bracelet);

@@ -19,8 +19,10 @@ assert.equal(calculate(300, 15, 168), 478.8);
 assert.equal(calculate(null, 15, 168), null);
 assert.equal(calculate(10, 15, 168), 0);
 assert.equal(missingFromKame(rows, []).length, 1);
-assert.equal(missingFromKame(rows, [{ reference:'336934', variant:'ミントグリーン ジュビリー' }]).length, 0);
-assert.equal(missingFromKame(rows, [{ reference:'336934', variant:'ミントグリーン オイスター' }]).length, 1);
-assert.equal(missingFromKame(rows, [{ reference:'336934', variant:'ミントグリーン' }]).length, 0);
+assert.equal(missingFromKame(rows, [{ reference:'336934', newPriceManYen:300, usedPriceManYen:280, variant:'ミントグリーン ジュビリー' }]).length, 0);
+assert.equal(missingFromKame(rows, [{ reference:'336934', newPriceManYen:300, usedPriceManYen:280, variant:'ミントグリーン オイスター' }]).length, 1);
+assert.equal(missingFromKame(rows, [{ reference:'336934', newPriceManYen:300, usedPriceManYen:280, variant:'ミントグリーン' }]).length, 0);
 assert.equal(parseWatchnian(html.replace('～¥3,000,000', 'お問い合わせ'), 'https://buy.watchnian.com').length, 0);
 console.log('Watchnian: parse, JPY units, conversion, Kame priority, ambiguous matches and missing prices passed.');
+
+assert.equal(missingFromKame(rows, [{reference:'336934', variant:'ミントグリーン', newPriceManYen:null, usedPriceManYen:null}]).length, 1);
