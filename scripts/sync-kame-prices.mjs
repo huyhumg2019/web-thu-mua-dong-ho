@@ -841,15 +841,41 @@ async function main() {
     const listing = target.watchnianListing || chooseListing(listings, target);
     const sourceName = target.watchnianListing ? 'watchnian' : 'kame-kichi';
     const sourceUrl = target.watchnianListing?.sourceUrl || KAME_URL;
-    if (target.watchnianListing && (
-      current?.price_mode === 'manual' ||
-        (current && !['watchnian', 'kame-kichi'].includes(current.price_source) &&
-          !(current.price_mode === 'auto' && !current.price_source &&
-            !current.auto_new_price_million_vnd && !current.auto_used_price_million_vnd)) ||
-        existingVariants.some(v => v.reference === target.reference &&
-          v.variant_key === target.variantKey && v.price_mode === 'manual')
-    )) {
-      report.push({ reference: target.reference, status: 'skipped-protected-row', source: sourceName });
+    if (current?.price_mode === "manual" &&
+      current.price_source === "manual") {
+      report.push({
+        reference: target.reference,
+        status: "skipped-manual-reference",
+        source: sourceName,
+      });
+      continue;
+    }
+    const variantKey = target.variantKey || "default";
+    const existingVariant = existingVariants.find(
+      (variant) => variant.reference === target.reference &&
+        variant.variant_key === variantKey,
+    );
+    // An inactive variant is a deliberate deletion. Manual prices are owned by staff.
+    if (existingVariant && (!existingVariant.active ||
+      existingVariant.price_mode === "manual")) {
+      report.push({
+        reference: target.reference,
+        variantKey,
+        status: "skipped-managed-variant",
+        source: sourceName,
+      });
+      continue;
+    }
+    if (target.watchnianListing && current &&
+      !["watchnian", "kame-kichi"].includes(current.price_source) &&
+      !(current.price_mode === "auto" && !current.price_source &&
+        !current.auto_new_price_million_vnd && !current.auto_used_price_million_vnd)) {
+      report.push({
+        reference: target.reference,
+        variantKey,
+        status: "skipped-protected-source",
+        source: sourceName,
+      });
       continue;
     }
 
@@ -1025,7 +1051,8 @@ async function main() {
       }
 
       // A supplemental variant must not replace the Kame parent price/image.
-      if (!target.watchnianListing || !kameReferences.has(target.reference)) await supabaseRequest(
+      if (current?.price_mode !== "manual" &&
+        (!target.watchnianListing || !kameReferences.has(target.reference))) await supabaseRequest(
         "/rest/v1/purchase_prices?on_conflict=reference",
         {
           method: "POST",
