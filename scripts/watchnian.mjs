@@ -26,11 +26,19 @@ export function parseWatchnian(html, url) {
     const usedPriceManYen = price('used');
     const { dial, bracelet } = identity(title);
     const image = block.match(/<img\b[^>]*src="([^"]+)"/)?.[1];
+    const thumbnailUrl = image ? new URL(image, url) : null;
+    // The listing uses a 210px thumbnail; the same image is available in /files/.
+    const originalPath = thumbnailUrl?.pathname.match(
+      /^\/files_thumbnail\/([^/]+)\/\d+\.(?:jpe?g|png|webp)$/i,
+    );
+    const sourceImageUrl = originalPath
+      ? new URL(`/files/${originalPath[1]}`, url).href
+      : thumbnailUrl?.href || '';
     if (!reference || !dial || !bracelet || !newPriceManYen || !usedPriceManYen) continue;
     const labels = { mint:'xanh mint', blue:'xanh lam', black:'đen', white:'trắng', chocolate:'chocolate', champagne:'champagne', slate:'xám' };
     rows.push({ reference, brand:'Rolex', model:'Sky-Dweller', variant:title,
       newPriceManYen, usedPriceManYen, source:'watchnian', sourceUrl:url,
-      sourceImageUrl:image ? new URL(image, url).href : '', dial, bracelet,
+      sourceImageUrl, sourceThumbnailUrl:thumbnailUrl?.href || '', dial, bracelet,
       variantKey:`watchnian-${dial}-${bracelet.toLowerCase()}`,
       variantLabel:`Mặt ${labels[dial]} · Dây ${bracelet}` });
   }
