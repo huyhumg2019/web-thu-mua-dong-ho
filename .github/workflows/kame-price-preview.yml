@@ -1,4 +1,4 @@
-name: Xem trước giá và ảnh Kame
+name: Đồng bộ giá và ảnh các nguồn
 
 on:
   schedule:
@@ -11,6 +11,8 @@ on:
     paths:
       - "scripts/sync-kame-prices.mjs"
       - "scripts/watchnian.mjs"
+      - "scripts/purchase-sync-policy.mjs"
+      - "scripts/test-purchase-sync-policy.mjs"
       - "scripts/test-watchnian.mjs"
       - ".github/workflows/kame-price-preview.yml"
 
@@ -32,7 +34,7 @@ on:
         type: string
         default: "-2"
       buffer_man_yen:
-        description: "Số 万円 trừ khỏi giá Kame"
+        description: "Số 万円 trừ khỏi giá nguồn"
         required: true
         type: string
         default: "20"
@@ -58,10 +60,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Kiểm tra bộ đọc Watchnian
-        run: node scripts/test-watchnian.mjs
+      - name: Kiểm tra nguồn và quy tắc bảo vệ giá
+        run: |
+          node scripts/test-watchnian.mjs
+          node scripts/test-purchase-sync-policy.mjs
 
-      - name: Kiểm tra bộ đọc Kame trên Pull Request
+      - name: Kiểm tra các nguồn trên Pull Request
         if: github.event_name == 'pull_request'
         env:
           APPLY_CHANGES: "false"

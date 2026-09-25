@@ -519,12 +519,21 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
 async function loadPrices() {
   adminMessage.textContent = "Đang tải dữ liệu giá...";
 
-  const { data, error } = await supabaseClient
-    .from("purchase_prices")
-    .select("*")
-    .order("brand")
-    .order("family")
-    .order("reference");
+  const pricePages = [];
+  let error = null;
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseClient
+      .from("purchase_prices")
+      .select("*")
+      .order("reference")
+      .range(offset, offset + 999);
+    if (page.error) {
+      error = page.error;
+      break;
+    }
+    pricePages.push(...(page.data || []));
+    if (!page.data || page.data.length < 1000) break;
+  }
 
   if (error) {
     console.error(error);
@@ -535,21 +544,32 @@ async function loadPrices() {
     return;
   }
 
-  const variantResult = await supabaseClient
-    .from("purchase_price_variants")
-    .select("*")
-    .eq("active", true)
-    .order("reference")
-    .order("variant_key");
-  purchaseVariants = variantResult.error ? [] : (variantResult.data || []);
-  if (variantResult.error) console.error(variantResult.error);
-  priceRows = data || [];
+  const variantPages = [];
+  let variantError = null;
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseClient
+      .from("purchase_price_variants")
+      .select("*")
+      .eq("active", true)
+      .order("reference")
+      .order("variant_key")
+      .range(offset, offset + 999);
+    if (page.error) {
+      variantError = page.error;
+      break;
+    }
+    variantPages.push(...(page.data || []));
+    if (!page.data || page.data.length < 1000) break;
+  }
+  purchaseVariants = variantError ? [] : variantPages;
+  if (variantError) console.error(variantError);
+  priceRows = pricePages;
   updatePriceFilters();
   renderFilteredPrices();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference, ${purchaseVariants.length} phiên bản.` +
-    (variantResult.error ? " Không tải được chi tiết phiên bản." : "");
+    (variantError ? " Không tải được chi tiết phiên bản." : "");
 }
 
 function getPriceBrand(watch) {
