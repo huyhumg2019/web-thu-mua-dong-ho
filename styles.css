@@ -405,3 +405,19 @@ header .logo {
   header .logo { font-size: 19px; gap: 5px; }
   .logo-mark { width: 40px; height: 42px; flex-basis: 40px; }
 }
+
+/* Keep the close control above the image and give touch users a full tap target. */
+#price-dialog .close {
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  top: 8px;
+  right: 8px;
+  padding: 0;
+  line-height: 1;
+  background: #fff;
+  border-radius: 50%;
+  touch-action: manipulation;
+}
