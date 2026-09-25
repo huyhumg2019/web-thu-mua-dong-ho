@@ -6,12 +6,12 @@ const images={rolex:'https://image.springnews.co.th/uploads/images/contents/w102
 const brands=[{name:'Rolex',slug:'rolex',count:'11 dòng',image:images.rolex,copy:'Datejust · GMT-Master II · Submariner'},{name:'Patek Philippe',slug:'patek',count:'4 dòng',image:images.patek,copy:'Nautilus · Aquanaut · Calatrava'},{name:'Audemars Piguet',slug:'ap',count:'3 dòng',image:images.ap,copy:'Royal Oak · Offshore · Code 11.59'}];
 // Dữ liệu giá mẫu: chỉ cần sửa n (hàng mới) và u (hàng đã dùng), đơn vị triệu VND.
 const buyModels={rolex:[
-  {name:'Datejust',ref:'Dòng Datejust',image:images.datejust,n:0,u:0},
+  {name:'Datejust',ref:'Dòng Datejust',image:images.datejust,imageScale:1.28,n:0,u:0},
   {name:'Submariner',matches:['Submariner','Submariner Date'],ref:'Dòng Submariner',image:images.submariner,n:0,u:0},
   {name:'Cosmograph Daytona',matches:['Cosmograph Daytona'],ref:'Dòng Cosmograph Daytona',image:images.daytona,n:0,u:0},
   {name:'GMT-Master II',ref:'Dòng GMT-Master II',image:images.pepsi,n:0,u:0},
-  {name:'Day-Date',ref:'Dòng Day-Date',image:images.daydate,n:0,u:0},
-  {name:'Oyster Perpetual',ref:'Dòng Oyster Perpetual',image:images.oyster,n:0,u:0},
+  {name:'Day-Date',ref:'Dòng Day-Date',image:images.daydate,imageScale:1.06,n:0,u:0},
+  {name:'Oyster Perpetual',ref:'Dòng Oyster Perpetual',image:images.oyster,imageScale:1.28,n:0,u:0},
   {name:'Yacht-Master',ref:'Dòng Yacht-Master',image:images.yacht,n:0,u:0},
   {name:'Sea-Dweller / Deepsea',matches:['Sea-Dweller','Deepsea'],ref:'Dòng Sea-Dweller và Deepsea',image:images.sea,n:0,u:0},
   {name:'Air-King',ref:'Dòng Air-King',image:images.air,n:0,u:0},
@@ -256,6 +256,14 @@ function showBrand(brand) {
       brand,
       family,
     );
+
+    // Source images have different amounts of empty space. Adjust the
+    // bundled fallback photos while leaving catalog replacements untouched.
+    const imageScale = familyImage === family.image
+      ? family.imageScale || 1
+      : 1;
+    card.style.setProperty("--family-image-scale", imageScale);
+    card.style.setProperty("--family-image-hover-scale", (imageScale * 1.035).toFixed(3));
 
     card.innerHTML = `
       <img
