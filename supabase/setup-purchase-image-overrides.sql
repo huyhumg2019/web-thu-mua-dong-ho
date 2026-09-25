@@ -103,9 +103,7 @@ select
   v.id as variant_id, p.reference, p.brand, p.family, p.model,
   v.variant_key, v.variant_label, v.bracelet, v.dial, v.display_order,
   v.new_price_million_vnd, v.used_price_million_vnd,
-  coalesce(o.image_url,
-    case when v.variant_key = 'default' then base.image_url end,
-    v.image_url) as image_url,
+  coalesce(o.image_url, base.image_url, v.image_url) as image_url,
   v.updated_at,
   v.nickname
 from public.purchase_prices p
@@ -130,7 +128,7 @@ left join public.purchase_image_overrides base
 where p.active = true
   and not exists (
     select 1 from public.purchase_price_variants v
-    where v.reference = p.reference
+    where v.reference = p.reference and v.active = true
   );
 
 grant select on public.purchase_catalog_variants to anon, authenticated;

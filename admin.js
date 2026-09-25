@@ -590,9 +590,7 @@ async function loadPrices() {
     ...variant,
     original_image_url: variant.image_url,
     image_url: overrideMap.get(`${variant.reference}\u0000${variant.variant_key}`) ||
-      (variant.variant_key === "default"
-        ? overrideMap.get(`${variant.reference}\u0000__reference__`)
-        : null) || variant.image_url,
+      overrideMap.get(`${variant.reference}\u0000__reference__`) || variant.image_url,
   }));
   if (variantError) console.error(variantError);
   if (overrideError) console.error(overrideError);
@@ -784,7 +782,7 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label, origin
   if (!imageOverrideReady) {
     button.title = "Cần chạy setup-purchase-image-overrides.sql trong Supabase";
   } else if (variantKey === "__reference__") {
-    button.title = "Ảnh đại diện mã; đổi ảnh từng phiên bản ở dòng bên dưới";
+    button.title = "Ảnh của mã và các phiên bản chưa được đổi ảnh riêng";
   }
 
   const picker = document.createElement("input");
