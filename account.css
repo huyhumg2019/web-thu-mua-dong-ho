@@ -611,10 +611,10 @@ a {
   width: 46px;
   height: 46px;
   flex: 0 0 46px;
-  background: url("logo/logo%20luxtime.png") center top / 98px auto no-repeat;
+  background: url("logo/luxtime-mark.png") center / contain no-repeat;
 }
 
 @media (max-width: 520px) {
   .account-logo { font-size: 19px; gap: 5px; }
-  .account-logo-mark { width: 40px; height: 42px; flex-basis: 40px; background-size: 85px auto; }
+  .account-logo-mark { width: 40px; height: 42px; flex-basis: 40px; }
 }
