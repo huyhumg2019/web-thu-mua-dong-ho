@@ -383,6 +383,86 @@ syncBufferInput.addEventListener("input", renderBufferLabel);
 renderDcomAdjustmentLabel();
 renderBufferLabel();
 
+// Trim only clearly white or transparent studio backgrounds. Keep other photos
+// unchanged so staff never lose a strap or bezel against a colored background.
+async function prepareWatchImage(file) {
+  if (typeof createImageBitmap !== "function") return { image: file, adjusted: false };
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+    const sample = document.createElement("canvas");
+    const ratio = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+    sample.width = Math.max(1, Math.round(bitmap.width * ratio));
+    sample.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const context = sample.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0, sample.width, sample.height);
+    const { data } = context.getImageData(0, 0, sample.width, sample.height);
+    const w = sample.width;
+    const h = sample.height;
+    const corners = [0, w - 1, (h - 1) * w, h * w - 1];
+    const transparent = corners.every((pixel) => data[pixel * 4 + 3] < 32);
+    const white = corners.every((pixel) => {
+      const i = pixel * 4;
+      return data[i + 3] >= 240 &&
+        data[i] >= 240 && data[i + 1] >= 240 && data[i + 2] >= 240;
+    });
+    if (!transparent && !white) return { image: file, adjusted: false };
+
+    const rows = new Uint16Array(h);
+    const columns = new Uint16Array(w);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const foreground = transparent
+          ? data[i + 3] >= 32
+          : data[i + 3] >= 32 &&
+            (Math.min(data[i], data[i + 1], data[i + 2]) < 238 ||
+              Math.max(data[i], data[i + 1], data[i + 2]) -
+                Math.min(data[i], data[i + 1], data[i + 2]) > 20);
+        if (foreground) { rows[y]++; columns[x]++; }
+      }
+    }
+    const minPixels = 2;
+    const top = rows.findIndex((count) => count >= minPixels);
+    const left = columns.findIndex((count) => count >= minPixels);
+    if (top < 0 || left < 0) return { image: file, adjusted: false };
+    let bottom = h - 1;
+    let right = w - 1;
+    while (rows[bottom] < minPixels) bottom--;
+    while (columns[right] < minPixels) right--;
+    const margin = Math.round(Math.max(right - left + 1, bottom - top + 1) * .07);
+    const x1 = Math.max(0, left - margin);
+    const y1 = Math.max(0, top - margin);
+    const x2 = Math.min(w, right + margin + 1);
+    const y2 = Math.min(h, bottom + margin + 1);
+    if ((x2 - x1) / w > .92 && (y2 - y1) / h > .92) {
+      return { image: file, adjusted: false };
+    }
+
+    const sx = Math.floor(x1 / w * bitmap.width);
+    const sy = Math.floor(y1 / h * bitmap.height);
+    const sw = Math.min(bitmap.width - sx, Math.ceil((x2 - x1) / w * bitmap.width));
+    const sh = Math.min(bitmap.height - sy, Math.ceil((y2 - y1) / h * bitmap.height));
+    const scale = Math.min(1, 1600 / Math.max(sw, sh));
+    const output = document.createElement("canvas");
+    output.width = Math.max(1, Math.round(sw * scale));
+    output.height = Math.max(1, Math.round(sh * scale));
+    output.getContext("2d").drawImage(bitmap, sx, sy, sw, sh,
+      0, 0, output.width, output.height);
+    const image = await new Promise((resolve) => output.toBlob(resolve, "image/webp", .92));
+    if (!image || image.size > 5 * 1024 * 1024) {
+      return { image: file, adjusted: false };
+    }
+    return { image, adjusted: true };
+  } catch (error) {
+    console.warn("Không thể tự căn ảnh, sẽ dùng ảnh gốc.", error);
+    return { image: file, adjusted: false };
+  } finally {
+    bitmap?.close();
+  }
+}
+
 async function uploadManualPurchaseImage(reference, file) {
   const allowedTypes = {
     "image/jpeg": "jpg",
@@ -400,12 +480,14 @@ async function uploadManualPurchaseImage(reference, file) {
     throw new Error("Ảnh không được lớn hơn 5 MB.");
   }
 
+  const { image, adjusted } = await prepareWatchImage(file);
+  const imageExtension = adjusted ? "webp" : extension;
   const path =
-    `manual/${reference.toLowerCase()}-${Date.now()}.${extension}`;
+    `manual/${reference.toLowerCase()}-${Date.now()}.${imageExtension}`;
   const { error } = await supabaseClient.storage
     .from("purchase-price-images")
-    .upload(path, file, {
-      contentType: file.type,
+    .upload(path, image, {
+      contentType: image.type,
       upsert: false,
     });
 
@@ -417,7 +499,7 @@ async function uploadManualPurchaseImage(reference, file) {
     .from("purchase-price-images")
     .getPublicUrl(path);
 
-  return { url: data.publicUrl, path };
+  return { url: data.publicUrl, path, adjusted };
 }
 
 function closeManualPurchaseForm() {
@@ -804,7 +886,7 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label, origin
     try {
       const safeKey = `${reference}-${variantKey}`
         .toLowerCase().replace(/[^a-z0-9-]/g, "-");
-      const { path } = await uploadManualPurchaseImage(safeKey, file);
+      const { path, adjusted } = await uploadManualPurchaseImage(safeKey, file);
       const { data: saved, error } = await supabaseClient.rpc(
         "set_purchase_image_override", {
           p_reference: reference,
@@ -815,7 +897,8 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label, origin
       if (error) throw error;
       if (saved !== true) throw new Error("Mẫu đồng hồ này không còn hoạt động.");
       await loadPrices();
-      adminMessage.textContent = `Đã đổi ảnh ${label}.`;
+      adminMessage.textContent = `Đã đổi ảnh ${label}.` +
+        (adjusted ? " Đã tự căn đồng hồ và bớt khoảng trắng." : "");
     } catch (error) {
       console.error(error);
       feedback.textContent = `Không thể đổi ảnh: ${error.message || "Lỗi không xác định"}`;
