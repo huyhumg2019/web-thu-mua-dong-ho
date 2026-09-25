@@ -542,11 +542,11 @@ function openDialog(product, mode) {
 function closePriceDialog() {
   const dialog = document.getElementById("price-dialog");
 
-  if (history.state?.rewatchPriceDialog) {
-    history.back();
-  } else if (dialog.open) {
-    dialog.close();
-  }
+  if (!dialog.open) return;
+
+  // Close immediately on touch; Safari can delay the popstate from history.back().
+  dialog.close();
+  if (history.state?.rewatchPriceDialog) history.back();
 }
 
 document
