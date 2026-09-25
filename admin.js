@@ -463,7 +463,7 @@ async function prepareWatchImage(file) {
   }
 }
 
-async function uploadManualPurchaseImage(reference, file) {
+async function uploadManualPurchaseImage(reference, file, { requireAdjusted = false } = {}) {
   const allowedTypes = {
     "image/jpeg": "jpg",
     "image/png": "png",
@@ -481,6 +481,9 @@ async function uploadManualPurchaseImage(reference, file) {
   }
 
   const { image, adjusted } = await prepareWatchImage(file);
+  if (requireAdjusted && !adjusted) {
+    throw new Error("Ảnh này không có nền trắng hoặc khoảng trống để tự căn. Hãy chọn ảnh khác bằng nút Đổi ảnh.");
+  }
   const imageExtension = adjusted ? "webp" : extension;
   const path =
     `manual/${reference.toLowerCase()}-${Date.now()}.${imageExtension}`;
@@ -853,7 +856,7 @@ function createWatchSummary(imageUrl, title, subtitle = "") {
   return summary;
 }
 
-function addPurchaseImageEditor(actionCell, reference, variantKey, label, originalImageUrl) {
+function addPurchaseImageEditor(actionCell, reference, variantKey, label, originalImageUrl, currentImageUrl) {
   const buttonLabel = variantKey === "__reference__" ? "Ảnh mã" : "Đổi ảnh";
   const overrideKey = `${reference}\u0000${variantKey}`;
   const button = document.createElement("button");
@@ -913,6 +916,47 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label, origin
   actionCell.appendChild(button);
   actionCell.appendChild(picker);
   if (imageOverrideReady && imageOverrideKeys.has(overrideKey)) {
+    const manualPrefix = config.url +
+      "/storage/v1/object/public/purchase-price-images/manual/";
+    if (currentImageUrl?.startsWith(manualPrefix)) {
+      const fit = document.createElement("button");
+      fit.type = "button";
+      fit.className = "secondary-action";
+      fit.textContent = "Tự căn ảnh";
+      fit.title = "Căn lại ảnh đã tải lên, không cần chọn lại tệp";
+      fit.addEventListener("click", async () => {
+        fit.disabled = true;
+        fit.textContent = "Đang căn ảnh...";
+        feedback.textContent = "";
+        try {
+          const response = await fetch(currentImageUrl);
+          if (!response.ok) throw new Error("Không tải được ảnh hiện tại.");
+          const file = await response.blob();
+          const safeKey = `${reference}-${variantKey}`
+            .toLowerCase().replace(/[^a-z0-9-]/g, "-");
+          const { path } = await uploadManualPurchaseImage(safeKey, file,
+            { requireAdjusted: true });
+          const { data: saved, error } = await supabaseClient.rpc(
+            "set_purchase_image_override", {
+              p_reference: reference,
+              p_variant_key: variantKey,
+              p_image_path: path,
+            },
+          );
+          if (error) throw error;
+          if (saved !== true) throw new Error("Mẫu đồng hồ này không còn hoạt động.");
+          await loadPrices();
+          adminMessage.textContent = `Đã tự căn ảnh ${label}.`;
+        } catch (error) {
+          console.error(error);
+          feedback.textContent = `Không thể tự căn ảnh: ${error.message || "Lỗi không xác định"}`;
+          adminMessage.textContent = feedback.textContent;
+          fit.disabled = false;
+          fit.textContent = "Tự căn ảnh";
+        }
+      });
+      actionCell.appendChild(fit);
+    }
     const restore = document.createElement("button");
     restore.type = "button";
     restore.className = "secondary-action";
@@ -1228,7 +1272,7 @@ function renderPrices(rows) {
     actionCell.appendChild(autoButton);
     addPurchaseImageEditor(
       actionCell, watch.reference, "__reference__", watch.reference,
-      watch.original_image_url,
+      watch.original_image_url, watch.image_url,
     );
 
     if (currentProfile?.role === "admin") {
@@ -1370,7 +1414,7 @@ function renderPrices(rows) {
         variant.reference,
         variant.variant_key,
         `${variant.reference} · ${variant.variant_label || variant.variant_key}`,
-        variant.original_image_url,
+        variant.original_image_url, variant.image_url,
       );
       if (currentProfile?.role === "admin") {
         const variantDelete = document.createElement("button");
