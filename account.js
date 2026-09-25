@@ -192,7 +192,7 @@ function getConditionText(condition) {
     unused: "Chưa sử dụng",
     "very-good": "Đã dùng – tình trạng rất tốt",
     used: "Đã qua sử dụng",
-    "needs-check": "Cần REWATCH kiểm tra",
+    "needs-check": "Cần LUXTIME kiểm tra",
   };
 
   return conditionNames[condition] || condition || "Chưa cung cấp";
