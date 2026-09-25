@@ -378,8 +378,7 @@
   background: currentColor;
 }
 
-/* The original logo file also contains a tagline. Crop to its emblem at header size
-   and keep the adjacent wordmark readable on narrow screens. */
+/* Use the standalone transparent emblem; the wordmark remains readable beside it. */
 header .logo {
   display: inline-flex;
   align-items: center;
@@ -393,10 +392,10 @@ header .logo {
   width: 46px;
   height: 46px;
   flex: 0 0 46px;
-  background: url("logo/logo%20luxtime.png") center top / 98px auto no-repeat;
+  background: url("logo/luxtime-mark.png") center / contain no-repeat;
 }
 
 @media (max-width: 520px) {
   header .logo { font-size: 19px; gap: 5px; }
-  .logo-mark { width: 40px; height: 42px; flex-basis: 40px; background-size: 85px auto; }
+  .logo-mark { width: 40px; height: 42px; flex-basis: 40px; }
 }
