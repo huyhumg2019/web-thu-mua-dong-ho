@@ -29,7 +29,7 @@ function setProductMessage(title, detail) {
 
 function showProduct(product) {
   document.title =
-    `${product.brand} ${product.name} — REWATCH`;
+    `${product.brand} ${product.name} — LUXTIME`;
 
   document.getElementById("product-brand").textContent =
     product.brand;
@@ -146,7 +146,7 @@ async function loadProduct() {
   ) {
     setProductMessage(
       "Chưa thiết lập kết nối",
-      "Vui lòng liên hệ REWATCH.",
+      "Vui lòng liên hệ LUXTIME.",
     );
     return;
   }
@@ -194,7 +194,7 @@ async function loadProduct() {
 
     setProductMessage(
       "Không thể tải dữ liệu sản phẩm",
-      "Vui lòng thử lại hoặc liên hệ REWATCH.",
+      "Vui lòng thử lại hoặc liên hệ LUXTIME.",
     );
     return;
   }
