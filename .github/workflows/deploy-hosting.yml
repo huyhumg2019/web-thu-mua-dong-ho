@@ -1,0 +1,73 @@
+name: Deploy LUXTIME to hosting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*.html"
+      - "*.css"
+      - "*.js"
+      - "images/**"
+      - "logo/**"
+      - ".github/workflows/deploy-hosting.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: luxtime-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check FTP settings
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          test -n "$FTP_HOST" || { echo "Missing FTP_HOST secret"; exit 1; }
+          test -n "$FTP_USER" || { echo "Missing FTP_USER secret"; exit 1; }
+          test -n "$FTP_PASSWORD" || { echo "Missing FTP_PASSWORD secret"; exit 1; }
+
+      - name: Collect public website files
+        run: |
+          set -euo pipefail
+          mkdir -p deploy
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec cp -- {} deploy/ \;
+          cp -R images logo deploy/
+          test -s deploy/index.html
+          test -s deploy/supabase-config.js
+          if grep -REiq 'service_role|sb_secret_' deploy; then
+            echo "A server-side credential marker was found in deploy files."
+            exit 1
+          fi
+          find deploy -type f | sort
+
+      - name: Install FTP client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+
+      - name: Upload using encrypted FTPS
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          port="${FTP_PORT:-21}"
+          lftp -u "$FTP_USER","$FTP_PASSWORD" -p "$port" "$FTP_HOST" <<'LFTP'
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:verify-certificate true
+          set net:max-retries 2
+          set net:timeout 20
+          cd domains/luxtime.vn/public_html
+          mirror --reverse --verbose --parallel=2 --no-perms deploy/ .
+          bye
+          LFTP
