@@ -1048,6 +1048,7 @@ function renderPrices(rows) {
         variant.price_mode === "manual" ? variant.manual_used_price_million_vnd : variant.auto_used_price_million_vnd
       ));
       const variantAction = document.createElement("td");
+      variantAction.className = "price-actions";
       const variantSave = document.createElement("button");
       variantSave.type = "button";
       variantSave.textContent = "Lưu";
