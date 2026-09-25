@@ -114,7 +114,24 @@ left join public.purchase_image_overrides o
   on o.reference = v.reference and o.variant_key = v.variant_key
 left join public.purchase_image_overrides base
   on base.reference = v.reference and base.variant_key = '__reference__'
-where p.active = true and v.active = true;
+where p.active = true and v.active = true
+union all
+select
+  null::uuid as variant_id, p.reference, p.brand, p.family, p.model,
+  'default'::text as variant_key,
+  coalesce(nullif(p.source_variant, ''), nullif(p.model, ''), 'Tiêu chuẩn') as variant_label,
+  null::text as bracelet, null::text as dial, 0::integer as display_order,
+  p.new_price_million_vnd, p.used_price_million_vnd,
+  coalesce(base.image_url, p.image_url) as image_url,
+  p.updated_at, null::text as nickname
+from public.purchase_prices p
+left join public.purchase_image_overrides base
+  on base.reference = p.reference and base.variant_key = '__reference__'
+where p.active = true
+  and not exists (
+    select 1 from public.purchase_price_variants v
+    where v.reference = p.reference
+  );
 
 grant select on public.purchase_catalog_variants to anon, authenticated;
 
