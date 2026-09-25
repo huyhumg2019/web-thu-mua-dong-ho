@@ -645,6 +645,44 @@
   min-width: 135px;
 }
 
+.watch-summary-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 210px;
+}
+
+.watch-summary-text {
+  min-width: 0;
+}
+
+.watch-thumbnail,
+.watch-thumbnail-missing {
+  flex: none;
+  width: 56px;
+  height: 64px;
+  border: 1px solid #eceae6;
+  background: #f8f8f7;
+}
+
+.watch-thumbnail {
+  object-fit: contain;
+}
+
+.watch-thumbnail[hidden] {
+  display: none;
+}
+
+.watch-thumbnail-missing {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  color: #777;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
 .price-actions button {
   width: 100%;
 }
