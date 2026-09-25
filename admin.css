@@ -712,7 +712,16 @@
 
 .price-actions .secondary-action:hover {
   border-color: var(--red);
-  color: #fff;
+  color: var(--red);
+}
+
+.image-edit-feedback {
+  display: block;
+  margin-top: 7px;
+  color: var(--red);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 
