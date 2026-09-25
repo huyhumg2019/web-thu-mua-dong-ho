@@ -323,7 +323,7 @@ function showFamilyReferences(brand, family) {
 
     emptyMessage.className = "loading-products";
     emptyMessage.textContent =
-      "Dòng này đang được cập nhật giá. Vui lòng liên hệ REWATCH.";
+      "Dòng này đang được cập nhật giá. Vui lòng liên hệ LUXTIME.";
 
     track.appendChild(emptyMessage);
     return;
@@ -677,7 +677,7 @@ document.getElementById("search-form").onsubmit = (event) => {
   }
 
   message.textContent =
-    "Chưa có mã này. Anh có thể gửi ảnh để REWATCH báo giá.";
+    "Chưa có mã này. Anh có thể gửi ảnh để LUXTIME báo giá.";
 };
 const menuButton = document.querySelector(".menu");
 const mainNavigation = document.querySelector("header nav");
