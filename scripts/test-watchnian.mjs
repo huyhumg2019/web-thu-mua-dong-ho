@@ -8,6 +8,8 @@ const html = `<li class="casestudyList04_item">
 <dl class="casestudyList04_conflictSet casestudyList04_conflictSet-used"><dd>～¥2,800,000</dd></dl>
 <img src="/files_thumbnail/test.jpg/210.jpg"></li>`;
 const rows = parseWatchnian(html, 'https://buy.watchnian.com/test/');
+assert.equal(rows[0].sourceImageUrl, 'https://buy.watchnian.com/files/test.jpg');
+assert.equal(rows[0].sourceThumbnailUrl, 'https://buy.watchnian.com/files_thumbnail/test.jpg/210.jpg');
 assert.equal(rows.length, 1);
 assert.equal(rows[0].newPriceManYen, 300);
 assert.equal(rows[0].usedPriceManYen, 280);
