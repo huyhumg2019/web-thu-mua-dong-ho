@@ -768,13 +768,16 @@ function createWatchSummary(imageUrl, title, subtitle = "") {
 }
 
 function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
+  const buttonLabel = variantKey === "__reference__" ? "Ảnh mã" : "Đổi ảnh";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "secondary-action";
-  button.textContent = "Đổi ảnh";
+  button.textContent = buttonLabel;
   button.disabled = !imageOverrideReady;
   if (!imageOverrideReady) {
     button.title = "Cần chạy setup-purchase-image-overrides.sql trong Supabase";
+  } else if (variantKey === "__reference__") {
+    button.title = "Ảnh đại diện mã; đổi ảnh từng phiên bản ở dòng bên dưới";
   }
 
   const picker = document.createElement("input");
@@ -809,7 +812,7 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
       adminMessage.textContent = error.message || `Không thể đổi ảnh ${label}.`;
     } finally {
       button.disabled = !imageOverrideReady;
-      button.textContent = "Đổi ảnh";
+      button.textContent = buttonLabel;
       picker.value = "";
     }
   });
