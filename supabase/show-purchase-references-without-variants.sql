@@ -1,7 +1,16 @@
 -- Run once in Supabase SQL Editor after setup-purchase-image-overrides.sql.
 -- References without active variants also appear on the public buyback page.
--- Existing variant prices, image overrides, and source sync remain unchanged.
+-- A reference image override applies to its variants unless a variant has its own override.
 begin;
+
+-- This reference has manually maintained prices and the owner wants it visible.
+-- Restore it only when both stored prices exist; do not change the prices.
+update public.purchase_prices
+set active = true
+where reference = '126710BLRO'
+  and active = false
+  and new_price_million_vnd > 0
+  and used_price_million_vnd > 0;
 
 create or replace view public.purchase_catalog_variants
 with (security_invoker = true) as
@@ -9,9 +18,7 @@ select
   v.id as variant_id, p.reference, p.brand, p.family, p.model,
   v.variant_key, v.variant_label, v.bracelet, v.dial, v.display_order,
   v.new_price_million_vnd, v.used_price_million_vnd,
-  coalesce(o.image_url,
-    case when v.variant_key = 'default' then base.image_url end,
-    v.image_url) as image_url,
+  coalesce(o.image_url, base.image_url, v.image_url) as image_url,
   v.updated_at,
   v.nickname
 from public.purchase_prices p
@@ -36,9 +43,16 @@ left join public.purchase_image_overrides base
 where p.active = true
   and not exists (
     select 1 from public.purchase_price_variants v
-    where v.reference = p.reference
+    where v.reference = p.reference and v.active = true
   );
 
 grant select on public.purchase_catalog_variants to anon, authenticated;
 
 commit;
+
+-- Return the actual public catalog rows to verify this migration.
+select reference, variant_key, new_price_million_vnd,
+  used_price_million_vnd, image_url
+from public.purchase_catalog_variants
+where reference in ('126710BLRO', '126710GRNR')
+order by reference, display_order;
