@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Tin tức trên GitHub Pages
+
+Trang công khai hiện dùng `index.html`, `news.html` và các file JavaScript/CSS ở gốc dự án. Để bật Tin tức:
+
+1. Sau khi gộp thay đổi vào `main`, mở Supabase Dashboard → SQL Editor và chạy toàn bộ `supabase/setup-news.sql` một lần.
+2. Vào `admin.html`, đăng nhập tài khoản admin hoặc staff, chọn **Đăng tin tức** ở đầu trang.
+3. Nhập tiêu đề, tóm tắt, nội dung, chọn tối đa 8 ảnh (mỗi ảnh tối đa 5 MB). Lưu **Bản nháp** để chuẩn bị; chọn **Đăng công khai** để bài xuất hiện ở `news.html` và ba bài gần nhất trên trang chủ.
+
+Nội dung bài lưu trong bảng `public.news_articles`; ảnh lưu trong bucket Supabase Storage `news-images`. Staff có thể sửa, gỡ công khai hoặc xóa bài. Không cần sửa mã HTML để đăng bài mỗi ngày.
+
 ## Getting Started
 
 First, run the development server:
