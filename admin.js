@@ -136,6 +136,7 @@ const productImagesInput = document.getElementById(
 let priceRows = [];
 let productRows = [];
 let currentProfile = null;
+let imageOverrideReady = false;
 
 async function showDashboard(session) {
   const { data: profile, error: profileError } =
@@ -415,7 +416,7 @@ async function uploadManualPurchaseImage(reference, file) {
     .from("purchase-price-images")
     .getPublicUrl(path);
 
-  return data.publicUrl;
+  return { url: data.publicUrl, path };
 }
 
 function closeManualPurchaseForm() {
@@ -477,7 +478,7 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
   adminMessage.textContent = `Đang tải ảnh ${reference}...`;
 
   try {
-    const imageUrl = await uploadManualPurchaseImage(
+    const { url: imageUrl } = await uploadManualPurchaseImage(
       reference,
       imageFile,
     );
@@ -561,15 +562,46 @@ async function loadPrices() {
     variantPages.push(...(page.data || []));
     if (!page.data || page.data.length < 1000) break;
   }
-  purchaseVariants = variantError ? [] : variantPages;
+  const overrides = [];
+  let overrideError = null;
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseClient
+      .from("purchase_image_overrides")
+      .select("reference, variant_key, image_url")
+      .order("reference")
+      .order("variant_key")
+      .range(offset, offset + 999);
+    if (page.error) {
+      overrideError = page.error;
+      break;
+    }
+    overrides.push(...(page.data || []));
+    if (!page.data || page.data.length < 1000) break;
+  }
+  imageOverrideReady = !overrideError;
+  const overrideMap = new Map(overrides.map((item) => [
+    `${item.reference}\u0000${item.variant_key}`, item.image_url,
+  ]));
+  purchaseVariants = (variantError ? [] : variantPages).map((variant) => ({
+    ...variant,
+    image_url: overrideMap.get(`${variant.reference}\u0000${variant.variant_key}`) ||
+      (variant.variant_key === "default"
+        ? overrideMap.get(`${variant.reference}\u0000__reference__`)
+        : null) || variant.image_url,
+  }));
   if (variantError) console.error(variantError);
-  priceRows = pricePages;
+  if (overrideError) console.error(overrideError);
+  priceRows = pricePages.map((watch) => ({
+    ...watch,
+    image_url: overrideMap.get(`${watch.reference}\u0000__reference__`) || watch.image_url,
+  }));
   updatePriceFilters();
   renderFilteredPrices();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference, ${purchaseVariants.length} phiên bản.` +
-    (variantError ? " Không tải được chi tiết phiên bản." : "");
+    (variantError ? " Không tải được chi tiết phiên bản." : "") +
+    (overrideError ? " Cần chạy setup-purchase-image-overrides.sql để sửa ảnh." : "");
 }
 
 function getPriceBrand(watch) {
@@ -733,6 +765,60 @@ function createWatchSummary(imageUrl, title, subtitle = "") {
   }
   summary.appendChild(details);
   return summary;
+}
+
+function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
+  const buttonLabel = variantKey === "__reference__" ? "Ảnh mã" : "Đổi ảnh";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary-action";
+  button.textContent = buttonLabel;
+  button.disabled = !imageOverrideReady;
+  if (!imageOverrideReady) {
+    button.title = "Cần chạy setup-purchase-image-overrides.sql trong Supabase";
+  } else if (variantKey === "__reference__") {
+    button.title = "Ảnh đại diện mã; đổi ảnh từng phiên bản ở dòng bên dưới";
+  }
+
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = "image/jpeg,image/png,image/webp,image/avif";
+  picker.hidden = true;
+  picker.setAttribute("aria-label", `Đổi ảnh ${label}`);
+  button.addEventListener("click", () => picker.click());
+  picker.addEventListener("change", async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+
+    button.disabled = true;
+    button.textContent = "Đang tải ảnh...";
+    try {
+      const safeKey = `${reference}-${variantKey}`
+        .toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      const { path } = await uploadManualPurchaseImage(safeKey, file);
+      const { data: saved, error } = await supabaseClient.rpc(
+        "set_purchase_image_override", {
+          p_reference: reference,
+          p_variant_key: variantKey,
+          p_image_path: path,
+        },
+      );
+      if (error) throw error;
+      if (saved !== true) throw new Error("Mẫu đồng hồ này không còn hoạt động.");
+      await loadPrices();
+      adminMessage.textContent = `Đã đổi ảnh ${label}.`;
+    } catch (error) {
+      console.error(error);
+      adminMessage.textContent = error.message || `Không thể đổi ảnh ${label}.`;
+    } finally {
+      button.disabled = !imageOverrideReady;
+      button.textContent = buttonLabel;
+      picker.value = "";
+    }
+  });
+
+  actionCell.appendChild(button);
+  actionCell.appendChild(picker);
 }
 
 function createPriceInput(value, label) {
@@ -996,6 +1082,9 @@ function renderPrices(rows) {
 
     actionCell.appendChild(saveButton);
     actionCell.appendChild(autoButton);
+    addPurchaseImageEditor(
+      actionCell, watch.reference, "__reference__", watch.reference,
+    );
 
     if (currentProfile?.role === "admin") {
       const deleteButton = document.createElement("button");
@@ -1060,11 +1149,13 @@ function renderPrices(rows) {
       ));
       detailRow.appendChild(variantCell);
       const variantModeCell = document.createElement("td");
+      variantModeCell.className = "variant-mode-cell";
       const variantMode = document.createElement("select");
       variantMode.className = "price-mode-select";
       variantMode.innerHTML = '<option value="auto">Tự động</option><option value="manual">Thủ công</option>';
       variantMode.value = variant.price_mode || "auto";
       const sourceLabel = document.createElement("small");
+      sourceLabel.className = "variant-source-label";
       sourceLabel.textContent = variant.source_name || "Thêm thủ công";
       variantModeCell.appendChild(sourceLabel);
       variantModeCell.appendChild(variantMode);
@@ -1132,6 +1223,12 @@ function renderPrices(rows) {
         }
       });
       variantAction.appendChild(variantSave);
+      addPurchaseImageEditor(
+        variantAction,
+        variant.reference,
+        variant.variant_key,
+        `${variant.reference} · ${variant.variant_label || variant.variant_key}`,
+      );
       if (currentProfile?.role === "admin") {
         const variantDelete = document.createElement("button");
         variantDelete.type = "button";
