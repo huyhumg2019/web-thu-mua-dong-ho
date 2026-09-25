@@ -137,6 +137,7 @@ let priceRows = [];
 let productRows = [];
 let currentProfile = null;
 let imageOverrideReady = false;
+let imageOverrideKeys = new Set();
 
 async function showDashboard(session) {
   const { data: profile, error: profileError } =
@@ -579,11 +580,15 @@ async function loadPrices() {
     if (!page.data || page.data.length < 1000) break;
   }
   imageOverrideReady = !overrideError;
+  imageOverrideKeys = new Set(
+    overrides.map((item) => `${item.reference}\u0000${item.variant_key}`),
+  );
   const overrideMap = new Map(overrides.map((item) => [
     `${item.reference}\u0000${item.variant_key}`, item.image_url,
   ]));
   purchaseVariants = (variantError ? [] : variantPages).map((variant) => ({
     ...variant,
+    original_image_url: variant.image_url,
     image_url: overrideMap.get(`${variant.reference}\u0000${variant.variant_key}`) ||
       (variant.variant_key === "default"
         ? overrideMap.get(`${variant.reference}\u0000__reference__`)
@@ -593,6 +598,7 @@ async function loadPrices() {
   if (overrideError) console.error(overrideError);
   priceRows = pricePages.map((watch) => ({
     ...watch,
+    original_image_url: watch.image_url,
     image_url: overrideMap.get(`${watch.reference}\u0000__reference__`) || watch.image_url,
   }));
   updatePriceFilters();
@@ -767,8 +773,9 @@ function createWatchSummary(imageUrl, title, subtitle = "") {
   return summary;
 }
 
-function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
+function addPurchaseImageEditor(actionCell, reference, variantKey, label, originalImageUrl) {
   const buttonLabel = variantKey === "__reference__" ? "Ảnh mã" : "Đổi ảnh";
+  const overrideKey = `${reference}\u0000${variantKey}`;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "secondary-action";
@@ -785,6 +792,9 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
   picker.accept = "image/jpeg,image/png,image/webp,image/avif";
   picker.hidden = true;
   picker.setAttribute("aria-label", `Đổi ảnh ${label}`);
+  const feedback = document.createElement("small");
+  feedback.className = "image-edit-feedback";
+  feedback.setAttribute("role", "status");
   button.addEventListener("click", () => picker.click());
   picker.addEventListener("change", async () => {
     const file = picker.files?.[0];
@@ -792,6 +802,7 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
 
     button.disabled = true;
     button.textContent = "Đang tải ảnh...";
+    feedback.textContent = "";
     try {
       const safeKey = `${reference}-${variantKey}`
         .toLowerCase().replace(/[^a-z0-9-]/g, "-");
@@ -809,7 +820,8 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
       adminMessage.textContent = `Đã đổi ảnh ${label}.`;
     } catch (error) {
       console.error(error);
-      adminMessage.textContent = error.message || `Không thể đổi ảnh ${label}.`;
+      feedback.textContent = `Không thể đổi ảnh: ${error.message || "Lỗi không xác định"}`;
+      adminMessage.textContent = feedback.textContent;
     } finally {
       button.disabled = !imageOverrideReady;
       button.textContent = buttonLabel;
@@ -819,6 +831,42 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label) {
 
   actionCell.appendChild(button);
   actionCell.appendChild(picker);
+  if (imageOverrideReady && imageOverrideKeys.has(overrideKey)) {
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.className = "secondary-action";
+    restore.textContent = originalImageUrl ? "Khôi phục ảnh nguồn" : "Bỏ ảnh đã thay";
+    restore.title = originalImageUrl
+      ? "Bỏ ảnh chỉnh tay và hiển thị lại ảnh lấy từ nguồn dữ liệu"
+      : "Bỏ ảnh chỉnh tay; ảnh gốc hiện chưa có";
+    restore.addEventListener("click", async () => {
+      const question = originalImageUrl
+        ? `Khôi phục ảnh nguồn cho ${label}?`
+        : `Bỏ ảnh đã thay cho ${label}? Mã này hiện chưa có ảnh nguồn.`;
+      if (!window.confirm(question)) return;
+      restore.disabled = true;
+      feedback.textContent = "";
+      try {
+        const { data: restored, error } = await supabaseClient.rpc(
+          "restore_purchase_source_image", {
+            p_reference: reference,
+            p_variant_key: variantKey,
+          },
+        );
+        if (error) throw error;
+        if (restored !== true) throw new Error("Không tìm thấy ảnh đã thay.");
+        await loadPrices();
+        adminMessage.textContent = `Đã khôi phục ảnh nguồn cho ${label}.`;
+      } catch (error) {
+        console.error(error);
+        feedback.textContent = `Không thể khôi phục: ${error.message || "Lỗi không xác định"}`;
+        adminMessage.textContent = feedback.textContent;
+        restore.disabled = false;
+      }
+    });
+    actionCell.appendChild(restore);
+  }
+  actionCell.appendChild(feedback);
 }
 
 function createPriceInput(value, label) {
@@ -1099,6 +1147,7 @@ function renderPrices(rows) {
     actionCell.appendChild(autoButton);
     addPurchaseImageEditor(
       actionCell, watch.reference, "__reference__", watch.reference,
+      watch.original_image_url,
     );
 
     if (currentProfile?.role === "admin") {
@@ -1240,6 +1289,7 @@ function renderPrices(rows) {
         variant.reference,
         variant.variant_key,
         `${variant.reference} · ${variant.variant_label || variant.variant_key}`,
+        variant.original_image_url,
       );
       if (currentProfile?.role === "admin") {
         const variantDelete = document.createElement("button");
