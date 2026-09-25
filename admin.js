@@ -856,6 +856,19 @@ function createPricePairCell(newPrice, usedPrice) {
   return cell;
 }
 
+function createSourceLabel(source) {
+  const names = {
+    "kame-kichi": "Kame-Kichi",
+    watchnian: "Watchnian",
+    manual: "Thêm thủ công",
+  };
+  const label = document.createElement("small");
+  label.className = "variant-source-label";
+  label.textContent = "Nguồn: " +
+    (names[source] || source || "Chưa xác định");
+  return label;
+}
+
 function renderPrices(rows) {
   priceTableBody.innerHTML = "";
 
@@ -930,6 +943,8 @@ function renderPrices(rows) {
       <option value="manual">Thủ công</option>
     `;
     modeSelect.value = watch.price_mode || "auto";
+    modeCell.className = "variant-mode-cell";
+    modeCell.appendChild(createSourceLabel(watch.price_source));
     modeCell.appendChild(modeSelect);
     row.appendChild(modeCell);
 
@@ -1154,10 +1169,7 @@ function renderPrices(rows) {
       variantMode.className = "price-mode-select";
       variantMode.innerHTML = '<option value="auto">Tự động</option><option value="manual">Thủ công</option>';
       variantMode.value = variant.price_mode || "auto";
-      const sourceLabel = document.createElement("small");
-      sourceLabel.className = "variant-source-label";
-      sourceLabel.textContent = variant.source_name || "Thêm thủ công";
-      variantModeCell.appendChild(sourceLabel);
+      variantModeCell.appendChild(createSourceLabel(variant.source_name));
       variantModeCell.appendChild(variantMode);
       detailRow.appendChild(variantModeCell);
       detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
