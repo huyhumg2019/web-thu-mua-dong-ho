@@ -622,6 +622,22 @@
   background: #fff;
 }
 
+.variant-source-label {
+  display: block;
+  max-width: 130px;
+  margin-bottom: 6px;
+  color: var(--grey);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.variant-mode-cell .price-mode-select {
+  display: block;
+  width: 130px;
+  max-width: 100%;
+}
+
 .manual-price-inputs label {
   color: var(--grey);
   font-size: 11px;
