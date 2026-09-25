@@ -1060,6 +1060,42 @@ function renderPrices(rows) {
         }
       });
       variantAction.appendChild(variantSave);
+      variantAction.className = "admin-actions";
+      if (currentProfile?.role === "admin") {
+        const variantDelete = document.createElement("button");
+        variantDelete.type = "button";
+        variantDelete.className = "danger-action";
+        variantDelete.textContent = "Xóa";
+        variantDelete.addEventListener("click", async () => {
+          if (!window.confirm("Xóa phiên bản " + variant.reference + " · " +
+            (variant.variant_label || variant.variant_key) +
+            " khỏi danh mục? Các phiên bản khác giữ nguyên.")) return;
+          variantDelete.disabled = true;
+          variantSave.disabled = true;
+          variantDelete.textContent = "Đang xóa...";
+          try {
+            // Keep an inactive manual record so automatic sync cannot recreate it.
+            const { data: removed, error } = await supabaseClient
+              .from("purchase_price_variants")
+              .update({ active: false, price_mode: "manual" })
+              .eq("reference", variant.reference)
+              .eq("variant_key", variant.variant_key)
+              .select("reference");
+            if (error) throw error;
+            if (!removed?.length) throw new Error("Không thể xóa phiên bản. Kiểm tra quyền tài khoản.");
+            await loadPrices();
+            adminMessage.textContent = "Đã xóa phiên bản " + variant.reference + " · " +
+              (variant.variant_label || variant.variant_key) + " khỏi danh mục.";
+          } catch (error) {
+            adminMessage.textContent = error.message || "Không thể xóa phiên bản.";
+          } finally {
+            variantDelete.disabled = false;
+            variantSave.disabled = false;
+            variantDelete.textContent = "Xóa";
+          }
+        });
+        variantAction.appendChild(variantDelete);
+      }
       detailRow.appendChild(variantAction);
       priceTableBody.appendChild(detailRow);
     }
