@@ -1,8 +1,8 @@
-// Điền đường dẫn tài khoản LUXTIME đã xác nhận trước khi xuất bản.
+// Chỉ hiển thị những kênh LUXTIME đã có tài khoản.
 const LUXTIME_CONTACT_LINKS = Object.freeze({
   zalo: "",
   instagram: "",
-  facebook: "",
+  facebook: "https://www.facebook.com/profile.php?id=61594430955885&locale=vi_VN",
 });
 
 document.querySelectorAll("a[data-contact]").forEach((link) => {
@@ -15,7 +15,6 @@ document.querySelectorAll("a[data-contact]").forEach((link) => {
     link.rel = "noopener noreferrer";
     link.removeAttribute("aria-disabled");
   } catch {
-    link.removeAttribute("href");
-    link.setAttribute("aria-disabled", "true");
+    link.remove();
   }
 });
