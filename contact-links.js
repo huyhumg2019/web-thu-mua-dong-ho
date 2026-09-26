@@ -1,4 +1,4 @@
-// Chỉ hiển thị những kênh LUXTIME đã có tài khoản.
+// Giữ các kênh hiển thị; chỉ bật liên kết khi có URL chính thức.
 const LUXTIME_CONTACT_LINKS = Object.freeze({
   zalo: "",
   instagram: "",
@@ -15,6 +15,7 @@ document.querySelectorAll("a[data-contact]").forEach((link) => {
     link.rel = "noopener noreferrer";
     link.removeAttribute("aria-disabled");
   } catch {
-    link.remove();
+    link.removeAttribute("href");
+    link.setAttribute("aria-disabled", "true");
   }
 });
