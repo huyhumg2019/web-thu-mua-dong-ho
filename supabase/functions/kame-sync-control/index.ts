@@ -2,6 +2,8 @@ const REPOSITORY = "huyhumg2019/web-thu-mua-dong-ho";
 const WORKFLOW = "kame-price-preview.yml";
 
 const allowedOrigins = [
+  "https://luxtime.vn",
+  "https://www.luxtime.vn",
   "https://huyhumg2019.github.io",
   "http://127.0.0.1:5500",
   "http://localhost:5500",
