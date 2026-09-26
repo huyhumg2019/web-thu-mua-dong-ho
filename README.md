@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Danh sách tài khoản trong admin
+
+Chạy `supabase/setup-admin-accounts.sql` một lần trong Supabase SQL Editor, sau đó xuất bản `admin.html`, `admin.js`, `admin-accounts.js` và `admin-accounts.css`. Chỉ hồ sơ có vai trò `admin` được xem danh sách khách hàng, nhân viên, admin và lịch sử yêu cầu của khách. Nhân viên không được cấp quyền đọc danh sách này. Trang này chỉ xem dữ liệu, không thay đổi vai trò hoặc mật khẩu.
+
 ## Tin tức trên GitHub Pages
 
 Trang công khai hiện dùng `index.html`, `news.html` và các file JavaScript/CSS ở gốc dự án. Để bật Tin tức:
