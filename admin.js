@@ -166,6 +166,10 @@ async function showDashboard(session) {
   }
 
   currentProfile = profile;
+  document.getElementById("admin-accounts-section").hidden =
+    profile.role !== "admin";
+  document.getElementById("admin-accounts-link").hidden =
+    profile.role !== "admin";
 
   loginPanel.hidden = true;
   dashboard.hidden = false;
@@ -179,6 +183,9 @@ async function showDashboard(session) {
     loadLatestSyncStatus(),
   ]);
   await window.loadNewsAdmin?.();
+  if (profile.role === "admin") {
+    await window.loadAdminAccounts?.();
+  }
 }
 
 /* ===== ĐỒNG BỘ KAME ===== */
@@ -2008,6 +2015,7 @@ document
     await supabaseClient.auth.signOut();
 
     currentProfile = null;
+    window.clearAdminAccounts?.();
     priceRows = [];
     productRows = [];
 

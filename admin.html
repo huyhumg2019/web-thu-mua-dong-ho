@@ -16,6 +16,7 @@
 
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="admin.css?v=20260925-image-restore">
+    <link rel="stylesheet" href="admin-accounts.css?v=20260926-1">
     <link rel="stylesheet" href="news.css?v=20260925-news">
   </head>
 
@@ -69,6 +70,7 @@
           <div class="admin-heading-actions">
             <a href="index.html" target="_blank">Xem website</a>
             <a href="#admin-news-title">Đăng tin tức</a>
+            <a id="admin-accounts-link" href="#admin-accounts-title" hidden>Tài khoản</a>
             <button id="logout-button" type="button">Đăng xuất</button>
           </div>
         </div>
@@ -439,6 +441,44 @@
           <p id="news-admin-message" role="status"></p>
           <div id="news-admin-list" class="news-admin-list"></div>
         </section>
+        <section class="admin-accounts-section" id="admin-accounts-section" aria-labelledby="admin-accounts-title" hidden>
+          <div class="admin-section-heading">
+            <div>
+              <span class="kicker">KHÁCH HÀNG VÀ NHÂN VIÊN</span>
+              <h2 id="admin-accounts-title">Quản lý tài khoản</h2>
+            </div>
+            <button id="refresh-admin-accounts" type="button">Tải lại</button>
+          </div>
+          <div class="accounts-toolbar">
+            <input id="admin-account-search" type="search" placeholder="Tìm tên hoặc email" aria-label="Tìm tài khoản">
+            <select id="admin-account-role" aria-label="Lọc vai trò">
+              <option value="">Tất cả vai trò</option>
+              <option value="customer">Khách hàng</option>
+              <option value="staff">Nhân viên</option>
+              <option value="admin">Admin</option>
+            </select>
+            <span id="admin-account-count"></span>
+          </div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table accounts-table">
+              <thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ngày tạo</th><th>Yêu cầu</th><th>Thao tác</th></tr></thead>
+              <tbody id="admin-account-table-body"></tbody>
+            </table>
+          </div>
+          <p id="admin-accounts-message" role="status"></p>
+          <div id="admin-account-detail" class="admin-account-detail" hidden>
+            <div class="admin-section-heading">
+              <div><h3 id="admin-account-detail-title"></h3><p id="admin-account-detail-email"></p></div>
+              <button id="close-admin-account-detail" type="button">Đóng</button>
+            </div>
+            <p id="admin-account-requests-message" role="status"></p>
+            <div class="admin-table-wrapper">
+              <table class="admin-table"><thead><tr><th>Mã yêu cầu</th><th>Loại</th><th>Ngày gửi</th><th>Số đồng hồ</th><th>Trạng thái</th></tr></thead>
+                <tbody id="admin-account-requests-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -446,5 +486,6 @@
     <script src="supabase-config.js"></script>
     <script src="admin.js?v=20260925-news"></script>
     <script src="news-admin.js?v=20260925-news"></script>
+    <script src="admin-accounts.js?v=20260926-1"></script>
   </body>
 </html>
