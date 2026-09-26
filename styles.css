@@ -421,3 +421,19 @@ header .logo {
   border-radius: 50%;
   touch-action: manipulation;
 }
+
+/* Keep catalog photos and the price dialog on a consistent white canvas. */
+#buy,
+.brand-models,
+.sale-section,
+.sale-card,
+#price-dialog,
+#price-dialog > img,
+.watch-card img {
+  background: #fff;
+}
+
+.watch-card img,
+#price-dialog > img {
+  mix-blend-mode: normal;
+}
