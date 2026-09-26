@@ -166,6 +166,9 @@ async function showDashboard(session) {
   }
 
   currentProfile = profile;
+  document.querySelector(".kame-sync-panel").hidden =
+    profile.role !== "admin";
+  backupPurchasePricesButton.hidden = profile.role !== "admin";
   document.getElementById("admin-accounts-section").hidden =
     profile.role !== "admin";
   document.getElementById("admin-accounts-link").hidden =
@@ -180,7 +183,7 @@ async function showDashboard(session) {
   await Promise.all([
     loadPrices(),
     loadProducts(),
-    loadLatestSyncStatus(),
+    ...(profile.role === "admin" ? [loadLatestSyncStatus()] : []),
   ]);
   await window.loadNewsAdmin?.();
   if (profile.role === "admin") {
@@ -253,6 +256,7 @@ async function invokeSyncControl(body) {
 }
 
 async function loadLatestSyncStatus() {
+  if (currentProfile?.role !== "admin") return;
   refreshSyncStatusButton.disabled = true;
   syncStatus.className = "kame-sync-status running";
   syncStatus.textContent = "Đang kiểm tra trạng thái...";
@@ -280,6 +284,7 @@ async function loadLatestSyncStatus() {
 }
 
 async function requestKameSync(applyChanges) {
+  if (currentProfile?.role !== "admin") return;
   const adjustmentText = syncDcomAdjustmentInput.value.trim();
   const bufferText = syncBufferInput.value.trim();
   const adjustment = Number(adjustmentText);
@@ -613,15 +618,20 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
 
 async function loadPrices() {
   adminMessage.textContent = "Đang tải dữ liệu giá...";
+  const isAdmin = currentProfile?.role === "admin";
+  const staffPriceColumns = "reference,brand,family,model,active,price_mode,auto_new_price_million_vnd,auto_used_price_million_vnd,manual_new_price_million_vnd,manual_used_price_million_vnd,new_price_million_vnd,used_price_million_vnd,image_url,updated_at";
+  const staffVariantColumns = "reference,variant_key,variant_label,active,price_mode,auto_new_price_million_vnd,auto_used_price_million_vnd,manual_new_price_million_vnd,manual_used_price_million_vnd,new_price_million_vnd,used_price_million_vnd,image_url,updated_at";
 
   const pricePages = [];
   let error = null;
   for (let offset = 0; ; offset += 1000) {
-    const page = await supabaseClient
-      .from("purchase_prices")
-      .select("*")
-      .order("reference")
-      .range(offset, offset + 999);
+    const page = isAdmin
+      ? await supabaseClient.rpc("admin_purchase_source_rows", {
+          p_table: "prices", p_offset: offset, p_limit: 1000,
+        })
+      : await supabaseClient.from("purchase_prices")
+          .select(staffPriceColumns).order("reference")
+          .range(offset, offset + 999);
     if (page.error) {
       error = page.error;
       break;
@@ -642,13 +652,14 @@ async function loadPrices() {
   const variantPages = [];
   let variantError = null;
   for (let offset = 0; ; offset += 1000) {
-    const page = await supabaseClient
-      .from("purchase_price_variants")
-      .select("*")
-      .eq("active", true)
-      .order("reference")
-      .order("variant_key")
-      .range(offset, offset + 999);
+    const page = isAdmin
+      ? await supabaseClient.rpc("admin_purchase_source_rows", {
+          p_table: "variants", p_offset: offset, p_limit: 1000,
+        })
+      : await supabaseClient.from("purchase_price_variants")
+          .select(staffVariantColumns).eq("active", true)
+          .order("reference").order("variant_key")
+          .range(offset, offset + 999);
     if (page.error) {
       variantError = page.error;
       break;
@@ -1125,7 +1136,9 @@ function renderPrices(rows) {
     `;
     modeSelect.value = watch.price_mode || "auto";
     modeCell.className = "variant-mode-cell";
-    modeCell.appendChild(createSourceLabel(watch.price_source));
+    if (currentProfile?.role === "admin") {
+      modeCell.appendChild(createSourceLabel(watch.price_source));
+    }
     modeCell.appendChild(modeSelect);
     row.appendChild(modeCell);
 
@@ -1351,7 +1364,9 @@ function renderPrices(rows) {
       variantMode.className = "price-mode-select";
       variantMode.innerHTML = '<option value="auto">Tự động</option><option value="manual">Thủ công</option>';
       variantMode.value = variant.price_mode || "auto";
-      variantModeCell.appendChild(createSourceLabel(variant.source_name));
+      if (currentProfile?.role === "admin") {
+        variantModeCell.appendChild(createSourceLabel(variant.source_name));
+      }
       variantModeCell.appendChild(variantMode);
       detailRow.appendChild(variantModeCell);
       detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
@@ -1498,20 +1513,22 @@ function downloadCsvFile(rows) {
 }
 
 async function backupPurchasePrices() {
+  if (currentProfile?.role !== "admin") return;
   backupPurchasePricesButton.disabled = true;
   backupPurchasePricesButton.textContent = "Đang sao lưu...";
   adminMessage.textContent =
     "Đang chuẩn bị bản sao lưu giá và ảnh...";
 
   try {
-    const { data: variants, error } = await supabaseClient
-      .from("purchase_price_variants")
-      .select("*")
-      .order("reference")
-      .order("display_order");
-
-    if (error) {
-      throw error;
+    const variants = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabaseClient.rpc(
+        "admin_purchase_source_rows",
+        { p_table: "all_variants", p_offset: offset, p_limit: 1000 },
+      );
+      if (error) throw error;
+      variants.push(...(data || []));
+      if (!data || data.length < 1000) break;
     }
 
     const variantsByReference = new Map();
