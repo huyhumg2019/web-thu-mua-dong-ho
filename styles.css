@@ -348,6 +348,11 @@
   font-weight:600;
 }
 
+.purchase-sort{display:flex;align-items:center;gap:12px;color:var(--grey);font-size:13px}
+.purchase-sort[hidden]{display:none}
+.purchase-sort select{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 12px;border-radius:4px}
+@media(max-width:900px){.purchase-sort{margin-top:20px;justify-content:flex-start}}
+
 /* Nhãn trạng thái nổi bật nhưng vẫn giữ phong cách giao diện cũ */
 .card-label,
 .stock-tag {

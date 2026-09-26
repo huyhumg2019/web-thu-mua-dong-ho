@@ -229,10 +229,22 @@ function getFamilyCatalogImage(brand, family) {
 
 const familyPopularity = createFamilyPopularity(supabasePublicClient);
 void familyPopularity.refresh();
+const purchasePopularity = createPurchasePopularity(supabasePublicClient);
+void purchasePopularity.refresh();
+let selectedBuyFamily = null;
+const purchaseSort = document.getElementById('purchase-sort');
+const purchaseSortLabel = document.getElementById('purchase-sort-label');
+purchaseSort.addEventListener('change', () => {
+  if (selectedBuyBrand && selectedBuyFamily && showingBuyReferences) {
+    showFamilyReferences(selectedBuyBrand, selectedBuyFamily);
+  }
+});
 
 function showBrand(brand) {
   selectedBuyBrand = brand;
+  selectedBuyFamily = null;
   showingBuyReferences = false;
+  purchaseSortLabel.hidden = true;
 
   document.getElementById("buy").hidden = true;
 
@@ -294,6 +306,8 @@ function showBrand(brand) {
 
 function showFamilyReferences(brand, family) {
   showingBuyReferences = true;
+  selectedBuyFamily = family;
+  purchaseSortLabel.hidden = false;
 
   const track = document.getElementById("model-track");
 
@@ -337,13 +351,9 @@ function showFamilyReferences(brand, family) {
     return;
   }
 
-  matchingWatches.sort((a, b) =>
-    a.ref.localeCompare(b.ref) ||
-    a.displayOrder - b.displayOrder
-  );
   track.classList.add("variant-results");
 
-  matchingWatches.forEach((watch) => {
+  purchasePopularity.sort(matchingWatches, purchaseSort.value).forEach((watch) => {
     const card = document.createElement("button");
 
     card.className = "watch-card reference-card";
@@ -373,6 +383,7 @@ function showFamilyReferences(brand, family) {
     `;
 
     card.addEventListener("click", () => {
+      void purchasePopularity.record(watch);
       openDialog(watch, "buy");
     });
 
