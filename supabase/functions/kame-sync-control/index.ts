@@ -86,7 +86,7 @@ async function authorizeStaff(request) {
   const profiles = await profileResponse.json();
   const role = profiles[0]?.role;
 
-  return ["admin", "staff"].includes(role)
+  return role === "admin"
     ? { id: user.id, role, authorization }
     : null;
 }
