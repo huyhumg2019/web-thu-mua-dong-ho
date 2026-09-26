@@ -151,6 +151,11 @@
   background: #fff;
 }
 
+.kame-sync-panel[hidden],
+#backup-purchase-prices[hidden] {
+  display: none !important;
+}
+
 .kame-sync-heading {
   align-items: center;
   margin-bottom: 22px;

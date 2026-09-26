@@ -2,6 +2,8 @@ const REPOSITORY = "huyhumg2019/web-thu-mua-dong-ho";
 const WORKFLOW = "kame-price-preview.yml";
 
 const allowedOrigins = [
+  "https://luxtime.vn",
+  "https://www.luxtime.vn",
   "https://huyhumg2019.github.io",
   "http://127.0.0.1:5500",
   "http://localhost:5500",
@@ -86,7 +88,7 @@ async function authorizeStaff(request) {
   const profiles = await profileResponse.json();
   const role = profiles[0]?.role;
 
-  return ["admin", "staff"].includes(role)
+  return role === "admin"
     ? { id: user.id, role, authorization }
     : null;
 }
