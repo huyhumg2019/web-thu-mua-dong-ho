@@ -1,0 +1,46 @@
+.admin-accounts-section {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid #dedbd6;
+}
+
+.admin-accounts-section[hidden],
+.admin-account-detail[hidden],
+#admin-accounts-link[hidden] {
+  display: none !important;
+}
+
+.accounts-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.accounts-toolbar input {
+  min-width: 240px;
+  flex: 1;
+}
+
+.accounts-toolbar select {
+  min-width: 155px;
+}
+
+.accounts-table td {
+  overflow-wrap: anywhere;
+}
+
+.admin-account-detail {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #dedbd6;
+  background: #fff;
+}
+
+@media (max-width: 700px) {
+  .accounts-toolbar input,
+  .accounts-toolbar select {
+    width: 100%;
+  }
+}
