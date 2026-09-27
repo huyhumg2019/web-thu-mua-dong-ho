@@ -117,7 +117,7 @@
     submit.textContent = "…";
     try {
       const config = window.REWATCH_SUPABASE;
-      if (!config?.url || !config?.publishableKey) throw new Error("Chat unavailable");
+      if (!config?.url || !config?.publishableKey || !config?.anonKey) throw new Error("Chat unavailable");
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 12000);
       let response;
@@ -127,7 +127,7 @@
           headers: {
             "Content-Type": "application/json",
             apikey: config.publishableKey,
-            Authorization: `Bearer ${config.publishableKey}`,
+            Authorization: `Bearer ${config.anonKey}`,
           },
           body: JSON.stringify({ messages: [...history.slice(-6), { role: "user", content: value }] }),
           signal: controller.signal,
