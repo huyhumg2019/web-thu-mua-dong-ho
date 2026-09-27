@@ -1511,7 +1511,9 @@ function renderPrices(rows) {
             },
           );
           if (error) throw error;
-          if (saved !== true) throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
+          if (isStaff ? typeof saved !== "string" || !saved : saved !== true) {
+            throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
+          }
           await loadPrices();
           adminMessage.textContent = (isStaff ? "Đã gửi để admin duyệt " : "Đã lưu ") +
             variant.reference + " · " + variant.variant_label;
@@ -2029,9 +2031,14 @@ productForm.addEventListener("submit", async (event) => {
       const result = await supabaseClient
         .from("products")
         .update(productData)
-        .eq("id", editingProductId);
+        .eq("id", editingProductId)
+        .select("id")
+        .maybeSingle();
 
       saveError = result.error;
+      if (!saveError && !result.data) {
+        throw new Error("Không tìm thấy sản phẩm hoặc tài khoản không có quyền sửa.");
+      }
     } else {
       const result = await supabaseClient
         .from("products")
