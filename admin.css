@@ -12,20 +12,22 @@
   border: 1px solid var(--line);
 }
 
+#staff-password-form[hidden] { display: none !important; }
+
 .login-panel h1,
 .admin-heading h1 {
   margin: 14px 0 30px;
   font: 500 40px/1.2 "Playfair Display", serif;
 }
 
-#login-form label {
+#login-form label, #staff-password-form label {
   display: block;
   margin: 18px 0 7px;
   font-size: 14px;
   font-weight: 600;
 }
 
-#login-form input {
+#login-form input, #staff-password-form input {
   width: 100%;
   height: 52px;
   padding: 0 15px;
@@ -33,12 +35,12 @@
   background: #fff;
 }
 
-#login-form input:focus {
+#login-form input:focus, #staff-password-form input:focus {
   border-color: var(--ink);
   outline: none;
 }
 
-#login-form button {
+#login-form button, #staff-password-form button {
   width: 100%;
   height: 54px;
   margin-top: 25px;
@@ -49,11 +51,12 @@
   cursor: pointer;
 }
 
-#login-form button:hover {
+#login-form button:hover, #staff-password-form button:hover {
   background: var(--red);
 }
 
 #login-message,
+#staff-password-message,
 #admin-message,
 #kame-sync-message {
   min-height: 24px;
