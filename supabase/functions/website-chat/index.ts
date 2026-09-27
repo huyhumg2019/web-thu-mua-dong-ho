@@ -21,7 +21,7 @@ const instructions = `Bạn là trợ lý tự động của LUXTIME, cửa hàn
 - Hàng có sẵn ở https://luxtime.vn/#available. Cần nhân viên xác nhận còn hàng và giá trước giao dịch.
 - Bán hộ: khách giữ quyền sở hữu, LUXTIME hỗ trợ đăng bán; phí được thỏa thuận trước khi đăng.
 - Khách có thể gửi thông tin và ảnh đồng hồ trong biểu mẫu trên trang, hoặc liên hệ qua Facebook trên website.
-Khi khách muốn bán đồng hồ, nêu các dòng thu mua phù hợp trong dữ liệu đính kèm; chỉ gọi là được xem nhiều nếu lượt xem 30 ngày > 0. Nói khách có thể mở đường dẫn danh mục ngay bên dưới câu trả lời, tìm Reference và gửi ảnh/thông tin để nhận tư vấn. Không bịa giá, tồn kho, địa chỉ, lịch hẹn, thời gian thanh toán, phí hay chính sách chưa có ở trên. Không tự nhận là nhân viên. Nếu câu hỏi ngoài thông tin, nói chưa có đủ thông tin và hướng dẫn khách nhắn Facebook. Không yêu cầu mật khẩu, thông tin thẻ hoặc tài liệu nhạy cảm. Tối đa 100 từ.`;
+Khi khách muốn bán đồng hồ, nêu các dòng thu mua phù hợp trong dữ liệu đính kèm; chỉ gọi là được xem nhiều nếu lượt xem 30 ngày > 0. Nói khách có thể mở đường dẫn danh mục ngay bên dưới câu trả lời, tìm Reference và gửi ảnh/thông tin để nhận tư vấn. Không viết URL hoặc Markdown trong câu trả lời; giao diện sẽ hiển thị liên kết đúng bên dưới. Không bịa giá, tồn kho, địa chỉ, lịch hẹn, thời gian thanh toán, phí hay chính sách chưa có ở trên. Không tự nhận là nhân viên. Nếu câu hỏi ngoài thông tin, nói chưa có đủ thông tin và hướng dẫn khách nhắn Facebook. Không yêu cầu mật khẩu, thông tin thẻ hoặc tài liệu nhạy cảm. Tối đa 100 từ.`;
 
 const brandNames = { rolex: "Rolex", patek: "Patek Philippe", ap: "Audemars Piguet" } as const;
 type BrandSlug = keyof typeof brandNames;
@@ -135,6 +135,9 @@ Deno.serve(async (request) => {
     }
     const question = data.messages.at(-1).content as string;
     const { context, links } = await purchaseContext(client, question);
+    if (isPurchaseQuestion(question) && !context) {
+      return reply(origin, { answer: "Mình chưa đọc được danh mục thu mua lúc này. Bạn có thể xem trực tiếp trang thu mua hoặc nhắn Facebook để LUXTIME hỗ trợ nhé.", links: [{ text: "Xem trang thu mua", href: "https://luxtime.vn/#buy" }], link: "facebook" });
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
