@@ -184,9 +184,10 @@ newsAdminForm.addEventListener("submit", async (event) => {
     };
     if (!previous) article.created_by = (await supabaseClient.auth.getUser()).data.user?.id;
     const result = previous
-      ? await supabaseClient.from("news_articles").update(article).eq("id", id)
-      : await supabaseClient.from("news_articles").insert(article);
+      ? await supabaseClient.from("news_articles").update(article).eq("id", id).select("id").maybeSingle()
+      : await supabaseClient.from("news_articles").insert(article).select("id").maybeSingle();
     if (result.error) throw result.error;
+    if (!result.data) throw new Error("Không tìm thấy bài viết hoặc tài khoản không có quyền sửa.");
 
     const cleanup = removed.size ? await newsStorage.remove([...removed]) : { error: null };
     resetNewsForm();
