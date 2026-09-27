@@ -161,7 +161,6 @@ function prepareVndInput(input) {
   input.type = "text";
   input.inputMode = "numeric";
   input.autocomplete = "off";
-  input.placeholder = "Ví dụ: 415.000.000";
   input.addEventListener("blur", () => {
     const millions = parseVndInput(input.value);
     if (Number.isFinite(millions)) input.value = formatVndInput(millions);
