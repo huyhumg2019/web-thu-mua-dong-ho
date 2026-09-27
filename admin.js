@@ -9,6 +9,7 @@ const supabaseClient = supabase.createClient(
 const loginPanel = document.getElementById("login-panel");
 const dashboard = document.getElementById("admin-dashboard");
 const loginForm = document.getElementById("login-form");
+const staffPasswordForm = document.getElementById("staff-password-form");
 const loginMessage = document.getElementById("login-message");
 const adminMessage = document.getElementById("admin-message");
 const productAdminMessage = document.getElementById(
@@ -2073,9 +2074,42 @@ async function startAdmin() {
     data: { session },
   } = await supabaseClient.auth.getSession();
 
-  if (session) {
+  if (session && new URLSearchParams(location.search).get("staff_invite") === "1") {
+    loginForm.hidden = true;
+    staffPasswordForm.hidden = false;
+    loginPanel.querySelector("h1").textContent = "Đặt mật khẩu nhân viên";
+  } else if (session) {
     await showDashboard(session);
+  } else if (new URLSearchParams(location.search).get("staff_invite") === "1") {
+    loginMessage.textContent = "Liên kết đã hết hạn hoặc chưa được xác nhận. Vui lòng mở lại email mời.";
   }
 }
+
+staffPasswordForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = document.getElementById("staff-password-message");
+  const password = document.getElementById("staff-new-password").value;
+  const confirmation = document.getElementById("staff-confirm-password").value;
+  if (password.length < 10 || password !== confirmation) {
+    message.textContent = "Mật khẩu phải có ít nhất 10 ký tự và hai lần nhập phải giống nhau.";
+    return;
+  }
+  const button = staffPasswordForm.querySelector('button[type="submit"]');
+  button.disabled = true;
+  message.textContent = "Đang đặt mật khẩu...";
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  button.disabled = false;
+  if (error) {
+    message.textContent = "Không thể đặt mật khẩu. Vui lòng mở lại email mời hoặc liên hệ admin.";
+    return;
+  }
+  staffPasswordForm.reset();
+  staffPasswordForm.hidden = true;
+  const url = new URL(location.href);
+  url.searchParams.delete("staff_invite");
+  history.replaceState(null, "", url.pathname + url.search + url.hash);
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) await showDashboard(session);
+});
 
 startAdmin();
