@@ -106,7 +106,8 @@
     if (!value || submit.disabled) return;
     appendMessage(value, "user");
     input.value = "";
-    const matched = knownAnswer(value);
+    // Suggested buttons are instant; free-form questions use the live catalog.
+    const matched = help.find((entry) => entry.label !== "Bán đồng hồ" && entry.label.toLowerCase() === value.toLowerCase());
     if (matched) {
       appendMessage(matched.answer, "bot", matched.link);
       history.push({ role: "user", content: value }, { role: "assistant", content: matched.answer });
@@ -139,6 +140,19 @@
       const data = await response.json();
       if (typeof data.answer !== "string" || !data.answer.trim()) throw new Error("Empty chat answer");
       appendMessage(data.answer, "bot", data.link === "facebook" ? { text: "Nhắn Facebook", href: facebook, external: true } : null);
+      if (Array.isArray(data.links)) {
+        const bubble = messages.lastElementChild;
+        for (const item of data.links.slice(0, 4)) {
+          if (typeof item?.text !== "string" || typeof item?.href !== "string") continue;
+          const url = new URL(item.href, location.href);
+          if (url.origin !== location.origin || url.pathname !== "/") continue;
+          const anchor = document.createElement("a");
+          anchor.textContent = item.text;
+          anchor.href = url.href;
+          anchor.className = "lux-chat-catalog-link";
+          bubble.append(anchor);
+        }
+      }
       history.push({ role: "user", content: value }, { role: "assistant", content: data.answer });
     } catch {
       appendMessage("Mình chưa trả lời được câu hỏi này. Bạn vui lòng nhắn Facebook để LUXTIME hỗ trợ trực tiếp nhé.", "bot", { text: "Nhắn Facebook", href: facebook, external: true });
