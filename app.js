@@ -1201,3 +1201,24 @@ window.addEventListener("hashchange", () => {
 });
 
 setCatalogMode(catalogModeFromHash());
+
+// A catalog link from chat opens the exact brand or family on the landing page.
+const buyLink = new URLSearchParams(window.location.search);
+const linkedBrand = brands.find((item) => item.slug === buyLink.get("buy_brand"));
+if (linkedBrand) {
+  const linkedFamily = buyModels[linkedBrand.slug].find((item) => item.name === buyLink.get("buy_family"));
+  if (linkedFamily) {
+    const waitForCatalog = (attempts = 0) => {
+      if (!csvPricesLoaded) {
+        if (attempts < 80) setTimeout(() => waitForCatalog(attempts + 1), 100);
+        else showBrand(linkedBrand);
+        return;
+      }
+      showBrand(linkedBrand);
+      showFamilyReferences(linkedBrand, linkedFamily);
+    };
+    waitForCatalog();
+  } else {
+    showBrand(linkedBrand);
+  }
+}
