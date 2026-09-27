@@ -21,7 +21,7 @@ npx supabase functions deploy kame-sync-control
 
 ## Website chat
 
-`website-chat` answers free-form visitor questions with `gpt-4.1-mini` when an
+`website-chat` answers free-form visitor questions with `gpt-4o-mini` when an
 OpenAI API key is configured. The browser only receives the Supabase publishable
 key. Without `OPENAI_API_KEY`, the widget still answers common questions locally,
 and unknown questions link to Facebook.
