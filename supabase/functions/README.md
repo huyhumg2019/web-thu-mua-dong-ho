@@ -18,3 +18,26 @@ npx supabase link --project-ref qmvbkmouxesrjcjcjmme
 npx supabase secrets set GITHUB_ACTIONS_TOKEN=YOUR_TOKEN
 npx supabase functions deploy kame-sync-control
 ```
+
+## Website chat
+
+`website-chat` answers free-form visitor questions with `gpt-4.1-mini` when an
+OpenAI API key is configured. The browser only receives the Supabase publishable
+key. Without `OPENAI_API_KEY`, the widget still answers common questions locally,
+and unknown questions link to Facebook.
+
+Run `supabase/setup-website-chat-quota.sql` in the project SQL editor first.
+It caps paid AI calls at 12 per IP hash and 200 total per UTC day. Then set
+`OPENAI_API_KEY` and a random `CHAT_HASH_SALT` as Edge Function secrets; neither
+value belongs in site files or GitHub. Deploy the function with JWT verification
+disabled because the public chat does not require a customer login:
+
+```bash
+npx supabase functions deploy website-chat --no-verify-jwt
+```
+
+The function accepts requests from `luxtime.vn` only, validates input length,
+never saves chat content in Supabase, and sends `store: false` to OpenAI. The
+quota is a spending guard, not proof of human identity; keep an API usage limit
+on the OpenAI account as well. Adjust facts in the server instructions when
+LUXTIME publishes new contact or business policies.
