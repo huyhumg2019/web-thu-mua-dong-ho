@@ -15,7 +15,7 @@
     >
 
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="admin.css?v=20260927-invite">
+    <link rel="stylesheet" href="admin.css?v=20260927-price-review">
     <link rel="stylesheet" href="admin-accounts.css?v=20260927-invite">
     <link rel="stylesheet" href="news.css?v=20260925-news">
   </head>
@@ -242,7 +242,7 @@
           </div>
 
           <p class="form-help">
-            Chỉ thêm mã chưa có trong danh mục. Giá sẽ được giữ ở chế độ thủ công.
+            Chỉ thêm mã chưa có trong danh mục. Đề xuất của nhân viên cần admin duyệt trước khi hiển thị.
           </p>
 
           <div class="admin-form-actions">
@@ -250,6 +250,18 @@
             <button id="cancel-manual-purchase-button" type="button">Hủy</button>
           </div>
         </form>
+
+        <section class="price-review-section" aria-labelledby="price-review-heading">
+          <div class="admin-section-heading compact-heading">
+            <div>
+              <span class="kicker">DUYỆT GIÁ THU MUA</span>
+              <h2 id="price-review-heading">Đề xuất sửa giá đang chờ</h2>
+            </div>
+          </div>
+          <p>Nhân viên gửi đề xuất; chỉ admin mới áp dụng giá mới lên danh mục.</p>
+          <div id="price-review-list" class="price-review-list"></div>
+          <p id="price-review-message" role="status"></p>
+        </section>
 
         <div class="admin-table-wrapper">
           <table class="admin-table">
@@ -503,7 +515,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="admin.js?v=20260927-invite"></script>
+    <script src="admin.js?v=20260927-price-review"></script>
     <script src="news-admin.js?v=20260925-news"></script>
     <script src="admin-accounts.js?v=20260927-invite"></script>
   </body>
