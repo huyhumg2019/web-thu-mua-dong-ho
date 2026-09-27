@@ -226,13 +226,13 @@
             </label>
 
             <label>
-              Giá hàng mới (triệu VND)
-              <input id="manual-purchase-new-price" type="number" min="0" step="1" required>
+              Giá hàng mới (VND)
+              <input id="manual-purchase-new-price" type="text" inputmode="numeric" placeholder="Ví dụ: 415.000.000" required>
             </label>
 
             <label>
-              Giá hàng đã dùng (triệu VND)
-              <input id="manual-purchase-used-price" type="number" min="0" step="1" required>
+              Giá hàng đã dùng (VND)
+              <input id="manual-purchase-used-price" type="text" inputmode="numeric" placeholder="Ví dụ: 395.000.000" required>
             </label>
 
             <label>
@@ -242,7 +242,7 @@
           </div>
 
           <p class="form-help">
-            Chỉ thêm mã chưa có trong danh mục. Đề xuất của nhân viên cần admin duyệt trước khi hiển thị.
+            Nhập số VND đầy đủ, ví dụ 415.000.000. Chỉ thêm mã chưa có trong danh mục. Đề xuất của nhân viên cần admin duyệt trước khi hiển thị.
           </p>
 
           <div class="admin-form-actions">
@@ -263,6 +263,7 @@
           <p id="price-review-message" role="status"></p>
         </section>
 
+        <p class="form-help">Giá chỉnh tay nhập bằng VND đầy đủ: 415.000.000, không nhập 415.</p>
         <div class="admin-table-wrapper">
           <table class="admin-table">
             <thead>
@@ -271,7 +272,7 @@
                 <th>Đồng hồ</th>
                 <th>Chế độ</th>
                 <th>Giá tự động</th>
-                <th>Giá chỉnh tay</th>
+                <th>Giá chỉnh tay (VND)</th>
                 <th>Giá đang hiển thị</th>
                 <th>Thao tác</th>
               </tr>
@@ -293,6 +294,10 @@
       Thêm sản phẩm mới
     </button>
   </div>
+
+  <div id="product-price-review-list" class="price-review-list"></div>
+  <p id="product-price-review-message" role="status"></p>
+  <p class="form-help">Nhân viên nhập giá bán bằng VND đầy đủ; giá mới chỉ hiển thị sau khi admin duyệt. Các thông tin khác lưu ngay.</p>
 
   <form id="product-admin-form" hidden>
     <input id="editing-product-id" type="hidden">
@@ -334,12 +339,12 @@
       </label>
 
       <label>
-        Giá bán (triệu VND)
+        Giá bán (VND)
         <input
           id="product-price-input"
-          type="number"
-          min="0"
-          step="1"
+          type="text"
+          inputmode="numeric"
+          placeholder="Ví dụ: 415.000.000"
           required
         >
       </label>
@@ -515,7 +520,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="admin.js?v=20260927-staff-edit"></script>
+    <script src="admin.js?v=20260927-price-approval-vnd"></script>
     <script src="news-admin.js?v=20260927-staff-edit"></script>
     <script src="admin-accounts.js?v=20260927-invite"></script>
   </body>
