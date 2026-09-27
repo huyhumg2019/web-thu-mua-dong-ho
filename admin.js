@@ -139,6 +139,38 @@ let productRows = [];
 let currentProfile = null;
 let imageOverrideReady = false;
 let imageOverrideKeys = new Set();
+let pendingPurchaseRequests = new Set();
+let pendingProductPrices = new Map();
+
+// The database keeps prices in millions; every admin price field shows full VND.
+function formatVndInput(millions) {
+  if (millions === null || millions === undefined || millions === "") return "";
+  return Math.round(Number(millions) * 1000000).toLocaleString("vi-VN");
+}
+
+function parseVndInput(value) {
+  const text = String(value).trim();
+  if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+)$/.test(text)) return NaN;
+  const vnd = Number(text.replaceAll(".", ""));
+  if (!Number.isSafeInteger(vnd) || (vnd !== 0 && vnd < 1000000) ||
+      vnd % 1000000 !== 0) return NaN;
+  return vnd / 1000000;
+}
+
+function prepareVndInput(input) {
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.autocomplete = "off";
+  input.placeholder = "Ví dụ: 415.000.000";
+  input.addEventListener("blur", () => {
+    const millions = parseVndInput(input.value);
+    if (Number.isFinite(millions)) input.value = formatVndInput(millions);
+  });
+}
+
+for (const input of [manualPurchaseNewPrice, manualPurchaseUsedPrice, productPriceInput]) {
+  prepareVndInput(input);
+}
 
 async function showDashboard(session) {
   const { data: profile, error: profileError } =
@@ -174,6 +206,7 @@ async function showDashboard(session) {
     profile.role !== "admin";
   document.getElementById("admin-accounts-link").hidden =
     profile.role !== "admin";
+  newProductButton.hidden = profile.role !== "admin";
   manualPurchaseForm.querySelector('button[type="submit"]').textContent =
     profile.role === "staff" ? "Gửi mã chờ duyệt" : "Lưu mã thu mua";
 
@@ -302,7 +335,6 @@ async function requestKameSync(applyChanges) {
       "Mức điều chỉnh DCOM phải từ −50 đến +50.";
     return;
   }
-
   if (!Number.isFinite(buffer) || buffer < 0) {
     syncMessage.textContent = "Mức trừ giá nguồn phải từ 0 trở lên.";
     return;
@@ -547,8 +579,8 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
   const reference = manualPurchaseReference.value
     .trim()
     .toUpperCase();
-  const newPrice = Number(manualPurchaseNewPrice.value);
-  const usedPrice = Number(manualPurchaseUsedPrice.value);
+  const newPrice = parseVndInput(manualPurchaseNewPrice.value);
+  const usedPrice = parseVndInput(manualPurchaseUsedPrice.value);
   const imageFile = manualPurchaseImage.files?.[0];
 
   if (!/^[0-9A-Z-]+$/.test(reference)) {
@@ -563,7 +595,7 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
     usedPrice < 0
   ) {
     adminMessage.textContent =
-      "Vui lòng nhập đủ hai mức giá từ 0 trở lên.";
+      "Nhập giá VND đầy đủ theo bội số 1.000.000 (ví dụ: 415.000.000).";
     return;
   }
 
@@ -648,6 +680,8 @@ async function loadPriceReviewRequests() {
     console.error(error);
     return;
   }
+  pendingPurchaseRequests = new Set((requests || []).map((request) =>
+    `${request.kind}\u0000${request.reference}\u0000${request.variant_key || ""}`));
   const names = new Map();
   if (currentProfile?.role === "admin" && requests.length) {
     const { data: accounts } = await supabaseClient.rpc("list_admin_accounts");
@@ -669,7 +703,7 @@ async function loadPriceReviewRequests() {
     const detail = document.createElement("p");
     detail.textContent = request.action === "auto" ? "Đề xuất dùng giá tự động" :
       `Đề xuất ${request.action === "create" ? "tạo mẫu" : "giá thủ công"}: ` +
-      `hàng mới ${request.new_price} triệu · đã dùng ${request.used_price} triệu`;
+      `hàng mới ${formatVndInput(request.new_price)}đ · đã dùng ${formatVndInput(request.used_price)}đ`;
     const by = document.createElement("p");
     by.textContent = `Gửi bởi ${names.get(request.requested_by) || "nhân viên"} · ` +
       new Date(request.requested_at).toLocaleString("vi-VN");
@@ -790,8 +824,8 @@ async function loadPrices() {
     image_url: overrideMap.get(`${watch.reference}\u0000__reference__`) || watch.image_url,
   }));
   updatePriceFilters();
-  renderFilteredPrices();
   await loadPriceReviewRequests();
+  renderFilteredPrices();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference, ${purchaseVariants.length} phiên bản.` +
@@ -1103,11 +1137,8 @@ function addPurchaseImageEditor(actionCell, reference, variantKey, label, origin
 function createPriceInput(value, label) {
   const input = document.createElement("input");
 
-  input.type = "number";
-  input.min = "0";
-  input.step = "1";
-  input.value = value ?? "";
-  input.placeholder = "Chưa đặt";
+  prepareVndInput(input);
+  input.value = formatVndInput(value);
   input.setAttribute("aria-label", label);
 
   return input;
@@ -1279,6 +1310,13 @@ function renderPrices(rows) {
     autoButton.type = "button";
     autoButton.className = "secondary-action";
     autoButton.textContent = "Dùng tự động";
+    const pricePending = currentProfile?.role === "staff" &&
+      pendingPurchaseRequests.has(`reference\u0000${watch.reference}\u0000`);
+    if (pricePending) {
+      saveButton.disabled = true;
+      saveButton.textContent = "Đang chờ duyệt";
+      autoButton.disabled = true;
+    }
 
     function updateManualInputs() {
       const isManual = modeSelect.value === "manual";
@@ -1293,8 +1331,8 @@ function renderPrices(rows) {
 
     saveButton.addEventListener("click", async () => {
       const isManual = modeSelect.value === "manual";
-      const newPrice = Number(newPriceInput.value);
-      const usedPrice = Number(usedPriceInput.value);
+      const newPrice = parseVndInput(newPriceInput.value);
+      const usedPrice = parseVndInput(usedPriceInput.value);
 
       if (
         isManual &&
@@ -1308,7 +1346,7 @@ function renderPrices(rows) {
         )
       ) {
         adminMessage.textContent =
-          "Chế độ thủ công cần nhập đủ hai mức giá, từ 0 trở lên.";
+          "Nhập giá VND đầy đủ theo bội số 1.000.000 (ví dụ: 415.000.000).";
 
         return;
       }
@@ -1458,9 +1496,9 @@ function renderPrices(rows) {
       detailRow.appendChild(createPricePairCell(variant.auto_new_price_million_vnd, variant.auto_used_price_million_vnd));
       const variantInputs = document.createElement("td");
       variantInputs.className = "manual-price-inputs";
-      const variantNew = createPriceInput(variant.manual_new_price_million_vnd, "Giá mới (triệu VND)");
-      const variantUsed = createPriceInput(variant.manual_used_price_million_vnd, "Giá cũ (triệu VND)");
-      for (const [text, input] of [["Hàng mới (triệu VND)", variantNew], ["Đã dùng (triệu VND)", variantUsed]]) {
+      const variantNew = createPriceInput(variant.manual_new_price_million_vnd, "Giá mới (VND)");
+      const variantUsed = createPriceInput(variant.manual_used_price_million_vnd, "Giá cũ (VND)");
+      for (const [text, input] of [["Hàng mới (VND)", variantNew], ["Đã dùng (VND)", variantUsed]]) {
         const label = document.createElement("label");
         label.textContent = text;
         label.appendChild(input);
@@ -1482,13 +1520,18 @@ function renderPrices(rows) {
       variantSave.type = "button";
       variantSave.textContent = "Lưu";
       variantSave.className = saveButton.className;
+      if (currentProfile?.role === "staff" && pendingPurchaseRequests.has(
+        `variant\u0000${variant.reference}\u0000${variant.variant_key}`)) {
+        variantSave.disabled = true;
+        variantSave.textContent = "Đang chờ duyệt";
+      }
       variantSave.addEventListener("click", async () => {
         const manual = variantMode.value === "manual";
-        const newValue = Number(variantNew.value);
-        const usedValue = Number(variantUsed.value);
+        const newValue = parseVndInput(variantNew.value);
+        const usedValue = parseVndInput(variantUsed.value);
         if (manual && (!variantNew.value.trim() || !variantUsed.value.trim() ||
           !Number.isFinite(newValue) || !Number.isFinite(usedValue) || newValue < 1 || usedValue < 1)) {
-          adminMessage.textContent = "Nhập đủ giá mới và cũ từ 1 triệu VND trở lên.";
+          adminMessage.textContent = "Nhập giá VND đầy đủ theo bội số 1.000.000 (ví dụ: 415.000.000).";
           return;
         }
         variantSave.disabled = true;
@@ -1723,6 +1766,49 @@ backupPurchasePricesButton.addEventListener(
 
 /* ===== QUẢN LÝ SẢN PHẨM ===== */
 
+function renderProductPriceReview(requests) {
+  const list = document.getElementById("product-price-review-list");
+  const message = document.getElementById("product-price-review-message");
+  list.replaceChildren();
+  message.textContent = requests.length ?
+    `${requests.length} giá bán đang chờ admin duyệt.` : "Không có giá bán chờ duyệt.";
+  for (const request of requests) {
+    const item = document.createElement("article");
+    item.className = "price-review-item";
+    const heading = document.createElement("strong");
+    heading.textContent = `${request.product_id} · ${formatVndInput(request.proposed_price_million_vnd)}đ`;
+    const detail = document.createElement("p");
+    detail.textContent = `Đề xuất lúc ${new Date(request.requested_at).toLocaleString("vi-VN")}`;
+    item.append(heading, detail);
+    if (currentProfile?.role === "admin") {
+      const actions = document.createElement("div");
+      actions.className = "price-review-actions";
+      for (const [approve, label] of [[true, "Duyệt và áp dụng"], [false, "Từ chối"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          const { error } = await supabaseClient.rpc("review_product_price_change", {
+            p_id: request.id, p_approve: approve,
+          });
+          if (error) {
+            message.textContent = error.message;
+            button.disabled = false;
+            return;
+          }
+          await loadProducts();
+          productAdminMessage.textContent = approve ?
+            `Đã duyệt giá bán ${request.product_id}.` : `Đã từ chối giá bán ${request.product_id}.`;
+        });
+        actions.appendChild(button);
+      }
+      item.appendChild(actions);
+    }
+    list.appendChild(item);
+  }
+}
+
 async function loadProducts() {
   productAdminMessage.textContent =
     "Đang tải danh sách sản phẩm...";
@@ -1748,6 +1834,19 @@ async function loadProducts() {
     return;
   }
 
+  const { data: requests, error: requestError } = await supabaseClient
+    .from("product_price_change_requests")
+    .select("id,product_id,proposed_price_million_vnd,requested_at")
+    .eq("status", "pending")
+    .order("requested_at", { ascending: false });
+  pendingProductPrices = new Map((requests || []).map((request) =>
+    [request.product_id, request]));
+  if (requestError) {
+    document.getElementById("product-price-review-message").textContent =
+      `Không tải được đề xuất giá bán: ${requestError.message}`;
+  } else {
+    renderProductPriceReview(requests || []);
+  }
   productRows = data || [];
   renderProducts(productRows);
 
@@ -1820,6 +1919,11 @@ function renderProducts(rows) {
     });
 
     actionCell.appendChild(editButton);
+    if (pendingProductPrices.has(product.id)) {
+      const status = document.createElement("small");
+      status.textContent = "Đang chờ duyệt giá";
+      actionCell.appendChild(status);
+    }
 
     row.appendChild(statusCell);
     row.appendChild(actionCell);
@@ -1835,6 +1939,9 @@ function resetProductForm() {
   productStatusInput.value = "available";
   productBoxInput.value = "Có";
   productPapersInput.value = "Có";
+  const saveButton = productForm.querySelector('button[type="submit"]');
+  saveButton.disabled = false;
+  saveButton.textContent = "Lưu sản phẩm";
 }
 
 function openProductForm(product = null) {
@@ -1849,8 +1956,9 @@ function openProductForm(product = null) {
     productNameInput.value = product.name || "";
     productReferenceInput.value =
       product.reference || "";
-    productPriceInput.value =
-      product.sale_price_million_vnd ?? "";
+    productPriceInput.value = formatVndInput(
+      pendingProductPrices.get(product.id)?.proposed_price_million_vnd ??
+      product.sale_price_million_vnd);
     productConditionInput.value =
       product.condition || "";
     productYearInput.value =
@@ -1865,9 +1973,16 @@ function openProductForm(product = null) {
   }
 
   productForm.hidden = false;
-  productAdminMessage.textContent = product
-    ? `Đang sửa sản phẩm ${product.reference}.`
-    : "Nhập thông tin sản phẩm mới.";
+  const pending = product && pendingProductPrices.has(product.id);
+  if (pending && currentProfile?.role === "staff") {
+    const saveButton = productForm.querySelector('button[type="submit"]');
+    saveButton.disabled = true;
+    saveButton.textContent = "Đang chờ duyệt";
+  }
+  productAdminMessage.textContent = pending ?
+    `Giá bán ${product.reference} đang chờ admin duyệt.` : product ?
+      `Đang sửa sản phẩm ${product.reference}. Giá bán nhân viên sửa cần admin duyệt.` :
+      "Nhập thông tin sản phẩm mới.";
 
   productForm.scrollIntoView({
     behavior: "smooth",
@@ -1981,11 +2096,11 @@ productForm.addEventListener("submit", async (event) => {
 
   let productId = editingProductId;
 
-  const salePrice = Number(productPriceInput.value);
+  const salePrice = parseVndInput(productPriceInput.value);
 
   if (!Number.isFinite(salePrice) || salePrice < 0) {
     productAdminMessage.textContent =
-      "Giá bán phải là số lớn hơn hoặc bằng 0.";
+      "Nhập giá bán VND đầy đủ theo bội số 1.000.000 (ví dụ: 415.000.000).";
 
     return;
   }
@@ -2021,16 +2136,27 @@ productForm.addEventListener("submit", async (event) => {
     'button[type="submit"]',
   );
 
+  if (currentProfile?.role === "staff" && !editingProductId) {
+    productAdminMessage.textContent = "Chỉ admin được tạo sản phẩm mới có giá bán.";
+    return;
+  }
+
   submitButton.disabled = true;
   submitButton.textContent = "Đang lưu...";
 
   try {
     let saveError = null;
+    const isStaff = currentProfile?.role === "staff";
+    const previousProduct = productRows.find((item) => item.id === editingProductId);
+    const priceChanged = isStaff && previousProduct &&
+      salePrice !== Number(previousProduct.sale_price_million_vnd);
 
     if (editingProductId) {
+      const updates = { ...productData };
+      if (isStaff) delete updates.sale_price_million_vnd;
       const result = await supabaseClient
         .from("products")
-        .update(productData)
+        .update(updates)
         .eq("id", editingProductId)
         .select("id")
         .maybeSingle();
@@ -2056,6 +2182,14 @@ productForm.addEventListener("submit", async (event) => {
       throw saveError;
     }
 
+    if (priceChanged) {
+      const { error: proposalError } = await supabaseClient.rpc(
+        "submit_product_price_change", {
+          p_product_id: editingProductId, p_price: salePrice,
+        });
+      if (proposalError) throw proposalError;
+    }
+
     const selectedFiles = Array.from(
       productImagesInput.files || [],
     );
@@ -2067,11 +2201,15 @@ productForm.addEventListener("submit", async (event) => {
       await uploadProductImages(productId, selectedFiles);
     }
 
-    closeProductForm();
     await loadProducts();
-
-    productAdminMessage.textContent =
-      `Đã lưu sản phẩm ${productData.reference}.`;
+    if (priceChanged) {
+      openProductForm(productRows.find((item) => item.id === productId));
+      productAdminMessage.textContent =
+        `Thông tin khác đã lưu; giá bán ${productData.reference} đang chờ admin duyệt.`;
+    } else {
+      closeProductForm();
+      productAdminMessage.textContent = `Đã lưu sản phẩm ${productData.reference}.`;
+    }
   } catch (error) {
     console.error(error);
 
@@ -2083,8 +2221,10 @@ productForm.addEventListener("submit", async (event) => {
         error.message || "Không thể lưu sản phẩm.";
     }
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Lưu sản phẩm";
+    const pending = currentProfile?.role === "staff" &&
+      pendingProductPrices.has(editingProductIdInput.value);
+    submitButton.disabled = Boolean(pending);
+    submitButton.textContent = pending ? "Đang chờ duyệt" : "Lưu sản phẩm";
   }
 });
 
