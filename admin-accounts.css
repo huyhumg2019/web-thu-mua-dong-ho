@@ -18,6 +18,27 @@
   margin: 20px 0;
 }
 
+.invite-staff-form {
+  margin: 22px 0 28px;
+  padding: 20px;
+  border: 1px solid #dedbd6;
+  background: #fff;
+}
+
+.invite-staff-form h3 { margin: 0 0 6px; }
+.invite-staff-form p { margin: 0 0 16px; }
+.invite-staff-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.invite-staff-fields label { flex: 1 1 220px; }
+.invite-staff-fields input { display: block; width: 100%; margin-top: 6px; }
+.invite-staff-fields button { min-height: 44px; }
+#invite-staff-message { margin: 12px 0 0; }
+
 .accounts-toolbar input {
   min-width: 240px;
   flex: 1;

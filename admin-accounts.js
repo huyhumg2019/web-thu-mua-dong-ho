@@ -4,6 +4,8 @@ const accountsMessage = document.getElementById("admin-accounts-message");
 const accountsDetail = document.getElementById("admin-account-detail");
 const accountsRequestsBody = document.getElementById("admin-account-requests-body");
 const accountsRequestsMessage = document.getElementById("admin-account-requests-message");
+const inviteStaffForm = document.getElementById("invite-staff-form");
+const inviteStaffMessage = document.getElementById("invite-staff-message");
 let adminAccounts = [];
 let accountsGeneration = 0;
 let detailGeneration = 0;
@@ -150,4 +152,32 @@ document.getElementById("refresh-admin-accounts").addEventListener("click", wind
 document.getElementById("close-admin-account-detail").addEventListener("click", () => {
   ++detailGeneration;
   accountsDetail.hidden = true;
+});
+
+inviteStaffForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (currentProfile?.role !== "admin") return;
+  const name = document.getElementById("invite-staff-name").value.trim();
+  const email = document.getElementById("invite-staff-email").value.trim().toLowerCase();
+  if (!name || !email) return;
+  const button = document.getElementById("invite-staff-button");
+  button.disabled = true;
+  inviteStaffMessage.textContent = "Đang gửi email mời...";
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("invite-staff", {
+      body: { name, email },
+    });
+    if (error) {
+      const details = await error.context?.json?.().catch(() => null);
+      throw new Error(details?.error || "Không thể gửi lời mời.");
+    }
+    if (!data?.invited) throw new Error("Lời mời chưa được xác nhận.");
+    inviteStaffForm.reset();
+    inviteStaffMessage.textContent = `Đã gửi email mời tới ${email}. Nhân viên mở email để đặt mật khẩu.`;
+    await window.loadAdminAccounts();
+  } catch (error) {
+    inviteStaffMessage.textContent = error.message || "Không thể tạo tài khoản nhân viên.";
+  } finally {
+    button.disabled = false;
+  }
 });

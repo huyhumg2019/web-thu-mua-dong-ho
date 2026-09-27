@@ -15,8 +15,8 @@
     >
 
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="admin.css?v=20260927-sources">
-    <link rel="stylesheet" href="admin-accounts.css?v=20260926-1">
+    <link rel="stylesheet" href="admin.css?v=20260927-invite">
+    <link rel="stylesheet" href="admin-accounts.css?v=20260927-invite">
     <link rel="stylesheet" href="news.css?v=20260925-news">
   </head>
 
@@ -56,6 +56,15 @@
           <button type="submit">Đăng nhập</button>
 
           <p id="login-message" role="status"></p>
+        </form>
+        <form id="staff-password-form" hidden>
+          <p>Hoàn tất lời mời nhân viên bằng cách đặt mật khẩu cho tài khoản.</p>
+          <label for="staff-new-password">Mật khẩu mới (ít nhất 10 ký tự)</label>
+          <input id="staff-new-password" type="password" autocomplete="new-password" minlength="10" required>
+          <label for="staff-confirm-password">Nhập lại mật khẩu</label>
+          <input id="staff-confirm-password" type="password" autocomplete="new-password" minlength="10" required>
+          <button type="submit">Đặt mật khẩu và vào admin</button>
+          <p id="staff-password-message" role="status"></p>
         </form>
       </section>
 
@@ -449,6 +458,16 @@
             </div>
             <button id="refresh-admin-accounts" type="button">Tải lại</button>
           </div>
+          <form id="invite-staff-form" class="invite-staff-form">
+            <h3>Mời nhân viên mới</h3>
+            <p>Nhân viên sẽ nhận email để tự đặt mật khẩu và đăng nhập trang admin.</p>
+            <div class="invite-staff-fields">
+              <label>Họ tên <input id="invite-staff-name" type="text" autocomplete="name" maxlength="120" required></label>
+              <label>Email <input id="invite-staff-email" type="email" autocomplete="email" maxlength="254" required></label>
+              <button type="submit" id="invite-staff-button">Gửi lời mời</button>
+            </div>
+            <p id="invite-staff-message" role="status"></p>
+          </form>
           <div class="accounts-toolbar">
             <input id="admin-account-search" type="search" placeholder="Tìm tên hoặc email" aria-label="Tìm tài khoản">
             <select id="admin-account-role" aria-label="Lọc vai trò">
@@ -484,8 +503,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="admin.js?v=20260927-sources"></script>
+    <script src="admin.js?v=20260927-invite"></script>
     <script src="news-admin.js?v=20260925-news"></script>
-    <script src="admin-accounts.js?v=20260926-1"></script>
+    <script src="admin-accounts.js?v=20260927-invite"></script>
   </body>
 </html>
