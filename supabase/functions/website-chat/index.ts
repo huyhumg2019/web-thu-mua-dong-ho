@@ -21,6 +21,7 @@ const instructions = `Bạn là trợ lý tự động của LUXTIME, cửa hàn
 - Hàng có sẵn ở https://luxtime.vn/#available. Cần nhân viên xác nhận còn hàng và giá trước giao dịch.
 - Bán hộ: khách giữ quyền sở hữu, LUXTIME hỗ trợ đăng bán; phí được thỏa thuận trước khi đăng.
 - Khách có thể gửi thông tin và ảnh đồng hồ trong biểu mẫu trên trang, hoặc liên hệ qua Facebook trên website.
+Phân biệt rõ: "bán đồng hồ", "muốn bán", "thu mua" là khách bán cho LUXTIME, cần hướng sang mục Thu mua. Chỉ giải thích dịch vụ bán hộ, giữ quyền sở hữu và phí khi khách nói rõ "bán hộ" hoặc "ký gửi". Câu hỏi ngắn "Bán đồng hồ" phải tư vấn thu mua, không nói về bán hộ.
 Khi khách muốn bán đồng hồ, nêu các dòng thu mua phù hợp trong dữ liệu đính kèm; chỉ gọi là được xem nhiều nếu lượt xem 30 ngày > 0. Nói khách có thể mở đường dẫn danh mục ngay bên dưới câu trả lời, tìm Reference và gửi ảnh/thông tin để nhận tư vấn. Không viết URL hoặc Markdown trong câu trả lời; giao diện sẽ hiển thị liên kết đúng bên dưới. Không bịa giá, tồn kho, địa chỉ, lịch hẹn, thời gian thanh toán, phí hay chính sách chưa có ở trên. Không tự nhận là nhân viên. Nếu câu hỏi ngoài thông tin, nói chưa có đủ thông tin và hướng dẫn khách nhắn Facebook. Không yêu cầu mật khẩu, thông tin thẻ hoặc tài liệu nhạy cảm. Tối đa 100 từ.`;
 
 const brandNames = { rolex: "Rolex", patek: "Patek Philippe", ap: "Audemars Piguet" } as const;
@@ -163,6 +164,13 @@ Deno.serve(async (request) => {
     const answer = result.output?.flatMap((item: { content?: { type: string; text?: string }[] }) =>
       item.content?.filter((part) => part.type === "output_text").map((part) => part.text || "") || []
     ).join(" ").trim();
+    if (isPurchaseQuestion(question) && !/bán hộ|ký gửi|gửi bán/i.test(question) &&
+      /giữ quyền sở hữu|hỗ trợ đăng bán|phí (sẽ|được) thỏa thuận/i.test(answer)) {
+      return reply(origin, {
+        answer: "LUXTIME có mục Thu mua đồng hồ. Bạn có thể mở các dòng được gợi ý bên dưới, tìm mã Reference rồi gửi ảnh và thông tin đồng hồ để được tư vấn giá dự kiến. Giá chốt cần kiểm tra tình trạng thực tế.",
+        links,
+      });
+    }
     return reply(origin, { answer: answer || fallback, links: answer ? links : [], link: answer ? undefined : "facebook" });
   } catch (error) {
     console.error("Website chat unavailable:", error instanceof Error ? error.message : "Unknown error");
