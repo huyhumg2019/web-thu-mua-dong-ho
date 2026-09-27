@@ -174,6 +174,8 @@ async function showDashboard(session) {
     profile.role !== "admin";
   document.getElementById("admin-accounts-link").hidden =
     profile.role !== "admin";
+  manualPurchaseForm.querySelector('button[type="submit"]').textContent =
+    profile.role === "staff" ? "Gửi mã chờ duyệt" : "Lưu mã thu mua";
 
   loginPanel.hidden = true;
   dashboard.hidden = false;
@@ -574,7 +576,7 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
     'button[type="submit"]',
   );
   submitButton.disabled = true;
-  submitButton.textContent = "Đang lưu...";
+  submitButton.textContent = "Đang gửi...";
   adminMessage.textContent = `Đang tải ảnh ${reference}...`;
 
   try {
@@ -582,9 +584,21 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
       reference,
       imageFile,
     );
+    const isStaff = currentProfile?.role === "staff";
     const { error } = await supabaseClient.rpc(
-      "upsert_manual_purchase_price",
-      {
+      isStaff ? "submit_purchase_price_change" : "admin_upsert_manual_purchase_price",
+      isStaff ? {
+        p_kind: "manual_item",
+        p_action: "create",
+        p_reference: reference,
+        p_brand: manualPurchaseBrand.value.trim(),
+        p_family: manualPurchaseFamily.value.trim(),
+        p_model: manualPurchaseModel.value.trim(),
+        p_variant_label: manualPurchaseVariant.value.trim() || "Tiêu chuẩn",
+        p_new_price: newPrice,
+        p_used_price: usedPrice,
+        p_image_url: imageUrl,
+      } : {
         p_reference: reference,
         p_brand: manualPurchaseBrand.value.trim(),
         p_family: manualPurchaseFamily.value.trim(),
@@ -604,18 +618,89 @@ manualPurchaseForm.addEventListener("submit", async (event) => {
     closeManualPurchaseForm();
     await loadPrices();
     adminMessage.textContent =
-      `Đã lưu mã thu mua thủ công ${reference}.`;
+      isStaff ? `Đã gửi mã ${reference} để admin duyệt.` :
+        `Đã lưu mã thu mua thủ công ${reference}.`;
   } catch (error) {
     console.error(error);
     adminMessage.textContent =
       error.message || `Không thể lưu ${reference}.`;
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "Lưu mã thu mua";
+    submitButton.textContent = currentProfile?.role === "staff" ?
+      "Gửi mã chờ duyệt" : "Lưu mã thu mua";
   }
 });
 
 /* ===== QUẢN LÝ GIÁ THU MUA ===== */
+
+async function loadPriceReviewRequests() {
+  const list = document.getElementById("price-review-list");
+  const message = document.getElementById("price-review-message");
+  list.replaceChildren();
+  message.textContent = "Đang tải đề xuất...";
+  const { data: requests, error } = await supabaseClient
+    .from("purchase_price_change_requests")
+    .select("id,requested_by,requested_at,kind,action,reference,variant_key,new_price,used_price,brand,family,model,variant_label")
+    .eq("status", "pending")
+    .order("requested_at", { ascending: false });
+  if (error) {
+    message.textContent = "Không thể tải đề xuất chờ duyệt.";
+    console.error(error);
+    return;
+  }
+  const names = new Map();
+  if (currentProfile?.role === "admin" && requests.length) {
+    const { data: accounts } = await supabaseClient.rpc("list_admin_accounts");
+    for (const account of accounts || []) {
+      names.set(account.account_id, account.full_name || account.email);
+    }
+  }
+  message.textContent = requests.length ?
+    `${requests.length} đề xuất đang chờ admin duyệt.` :
+    "Không có đề xuất đang chờ.";
+  for (const request of requests) {
+    const item = document.createElement("article");
+    item.className = "price-review-item";
+    const heading = document.createElement("strong");
+    const target = request.kind === "variant" ?
+      `${request.reference} · ${request.variant_label || request.variant_key}` :
+      `${request.reference}${request.kind === "manual_item" ? " · mẫu mới" : ""}`;
+    heading.textContent = target;
+    const detail = document.createElement("p");
+    detail.textContent = request.action === "auto" ? "Đề xuất dùng giá tự động" :
+      `Đề xuất ${request.action === "create" ? "tạo mẫu" : "giá thủ công"}: ` +
+      `hàng mới ${request.new_price} triệu · đã dùng ${request.used_price} triệu`;
+    const by = document.createElement("p");
+    by.textContent = `Gửi bởi ${names.get(request.requested_by) || "nhân viên"} · ` +
+      new Date(request.requested_at).toLocaleString("vi-VN");
+    item.append(heading, detail, by);
+    if (currentProfile?.role === "admin") {
+      const actions = document.createElement("div");
+      actions.className = "price-review-actions";
+      for (const [approved, label] of [[true, "Duyệt và áp dụng"], [false, "Từ chối"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.addEventListener("click", async () => {
+          for (const control of actions.querySelectorAll("button")) control.disabled = true;
+          message.textContent = approved ? "Đang áp dụng giá..." : "Đang từ chối...";
+          const { data, error: reviewError } = await supabaseClient.rpc(
+            "review_purchase_price_change", { p_id: request.id, p_approve: approved });
+          if (reviewError || data !== true) {
+            message.textContent = reviewError?.message || "Không thể xử lý đề xuất.";
+            for (const control of actions.querySelectorAll("button")) control.disabled = false;
+            return;
+          }
+          await loadPrices();
+          message.textContent = approved ? "Đã duyệt và cập nhật giá." : "Đã từ chối đề xuất.";
+        });
+        actions.appendChild(button);
+      }
+      item.appendChild(actions);
+    }
+    list.appendChild(item);
+  }
+}
 
 async function loadPrices() {
   adminMessage.textContent = "Đang tải dữ liệu giá...";
@@ -706,6 +791,7 @@ async function loadPrices() {
   }));
   updatePriceFilters();
   renderFilteredPrices();
+  await loadPriceReviewRequests();
 
   adminMessage.textContent =
     `Đã tải ${priceRows.length} mã Reference, ${purchaseVariants.length} phiên bản.` +
@@ -1230,24 +1316,20 @@ function renderPrices(rows) {
       saveButton.disabled = true;
       saveButton.textContent = "Đang lưu...";
 
-      const changes = {
-        price_mode: modeSelect.value,
-      };
-
-      if (isManual) {
-        changes.manual_new_price_million_vnd = newPrice;
-        changes.manual_used_price_million_vnd = usedPrice;
-      }
-
-      const { error } = await supabaseClient
-        .from("purchase_prices")
-        .update(changes)
-        .eq("reference", watch.reference);
+      const isStaff = currentProfile?.role === "staff";
+      const { data, error } = await supabaseClient.rpc(
+        isStaff ? "submit_purchase_price_change" : "admin_update_purchase_price", {
+          ...(isStaff ? { p_kind: "reference" } : {}),
+          p_reference: watch.reference,
+          p_action: modeSelect.value,
+          p_new_price: isManual ? newPrice : null,
+          p_used_price: isManual ? usedPrice : null,
+        });
 
       saveButton.disabled = false;
       saveButton.textContent = "Lưu";
 
-      if (error) {
+      if (error || !data) {
         console.error(error);
 
         adminMessage.textContent =
@@ -1258,7 +1340,8 @@ function renderPrices(rows) {
 
       await loadPrices();
 
-      adminMessage.textContent =
+      adminMessage.textContent = isStaff ?
+        `Đã gửi giá ${watch.reference} để admin duyệt.` :
         `Đã cập nhật giá ${watch.reference}.`;
     });
 
@@ -1266,14 +1349,15 @@ function renderPrices(rows) {
       autoButton.disabled = true;
       autoButton.textContent = "Đang chuyển...";
 
-      const { error } = await supabaseClient
-        .from("purchase_prices")
-        .update({
-          price_mode: "auto",
-        })
-        .eq("reference", watch.reference);
+      const isStaff = currentProfile?.role === "staff";
+      const { data, error } = await supabaseClient.rpc(
+        isStaff ? "submit_purchase_price_change" : "admin_update_purchase_price", {
+          ...(isStaff ? { p_kind: "reference" } : {}),
+          p_reference: watch.reference,
+          p_action: "auto",
+        });
 
-      if (error) {
+      if (error || !data) {
         console.error(error);
         autoButton.disabled = false;
         autoButton.textContent = "Dùng tự động";
@@ -1286,7 +1370,8 @@ function renderPrices(rows) {
 
       await loadPrices();
 
-      adminMessage.textContent =
+      adminMessage.textContent = isStaff ?
+        `Đã đề xuất dùng giá tự động cho ${watch.reference}.` :
         `${watch.reference} đang dùng giá tự động.`;
     });
 
@@ -1413,8 +1498,11 @@ function renderPrices(rows) {
             changes.manual_new_price_million_vnd = Math.floor(newValue);
             changes.manual_used_price_million_vnd = Math.floor(usedValue);
           }
+          const isStaff = currentProfile?.role === "staff";
           const { data: saved, error } = await supabaseClient.rpc(
-            "manage_purchase_variant", {
+            isStaff ? "submit_purchase_price_change" : "admin_manage_purchase_variant", {
+              ...(isStaff ? { p_kind: "variant" } : {}),
+              ...(isStaff ? { p_variant_label: variant.variant_label } : {}),
               p_reference: variant.reference,
               p_variant_key: variant.variant_key,
               p_action: manual ? "manual" : "auto",
@@ -1425,7 +1513,8 @@ function renderPrices(rows) {
           if (error) throw error;
           if (saved !== true) throw new Error("Không lưu được phiên bản. Kiểm tra quyền tài khoản.");
           await loadPrices();
-          adminMessage.textContent = "Đã lưu " + variant.reference + " · " + variant.variant_label;
+          adminMessage.textContent = (isStaff ? "Đã gửi để admin duyệt " : "Đã lưu ") +
+            variant.reference + " · " + variant.variant_label;
         } catch (error) {
           adminMessage.textContent = error.message || "Không lưu được giá phiên bản.";
         } finally {
@@ -1454,7 +1543,7 @@ function renderPrices(rows) {
           variantDelete.textContent = "Đang xóa...";
           try {
             const { data: removed, error } = await supabaseClient.rpc(
-              "manage_purchase_variant", {
+              "admin_manage_purchase_variant", {
                 p_reference: variant.reference,
                 p_variant_key: variant.variant_key,
                 p_action: "delete",
