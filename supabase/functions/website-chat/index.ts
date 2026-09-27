@@ -49,6 +49,9 @@ function requestedBrand(question: string): BrandSlug | null {
 }
 
 function isPurchaseQuestion(question: string) {
+  if (/bán hộ|ký gửi|gửi bán/i.test(question)) return false;
+  if (/muốn mua|tìm mua|mua đồng hồ|có sẵn|còn hàng|đặt mua/i.test(question) &&
+    !/thu mua|muốn bán|bán đồng hồ|báo giá thu mua/i.test(question)) return false;
   return /thu mua|bán|báo giá|định giá|reference|mã ref|đồng hồ|rolex|patek|audemars|nautilus|aquanaut|royal oak/i.test(question);
 }
 
