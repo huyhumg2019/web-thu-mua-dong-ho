@@ -72,7 +72,7 @@ Deno.serve(async (request) => {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: Deno.env.get("OPENAI_CHAT_MODEL") || "gpt-4.1-mini",
+          model: Deno.env.get("OPENAI_CHAT_MODEL") || "gpt-4o-mini",
           instructions,
           input: data.messages,
           max_output_tokens: 200,
