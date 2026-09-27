@@ -64,6 +64,14 @@
   font-size: 14px;
 }
 
+.price-review-section { margin: 28px 0; padding: 20px; border: 1px solid var(--line); background: #fff; }
+.price-review-list { display: grid; gap: 12px; }
+.price-review-item { padding: 14px; border: 1px solid var(--line); overflow-wrap: anywhere; }
+.price-review-item strong { display: block; }
+.price-review-item p { margin: 6px 0; }
+.price-review-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.price-review-actions button { min-height: 42px; }
+
 .admin-dashboard {
   max-width: 1400px;
   margin: 0 auto;
