@@ -4,7 +4,7 @@
     {
       label: "Bán đồng hồ",
       match: /thu mua|bán đồng hồ|bán chiếc|báo giá|định giá|muốn bán|giá|bao nhiêu|reference|mã ref|sell|買取/i,
-      answer: "Bạn có thể tra mã Reference ở trang Thu mua rồi gửi thông tin và ảnh đồng hồ. Giá trên web là dự kiến; LUXTIME sẽ xác nhận giá sau khi kiểm tra tình trạng thực tế.",
+      answer: "Bạn gửi mã Reference của đồng hồ, mình sẽ tra giá thu mua ngay. Nếu chưa biết mã, bạn có thể gửi ảnh qua Facebook để LUXTIME hỗ trợ.",
       link: { text: "Xem giá thu mua", href: "index.html#buy" },
     },
     {
@@ -33,8 +33,90 @@
     return help.find((entry) => entry.match.test(normalized)) || null;
   }
 
+  function normalizeText(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
+  }
+
+  function purchaseIntent(value) {
+    const text = normalizeText(value);
+    if (/ban ho|ky gui|gui ban|consign|委託/.test(text)) return false;
+    if (/thu mua|muon ban|can ban|ban dong ho|ban chiec|toi ban|minh ban|bao gia|dinh gia|sell|買取/.test(text)) return true;
+    if (/muon mua|can mua|tim mua|mua|co san|con hang|stock|buy|在庫/.test(text)) return false;
+    return null;
+  }
+
+  function requestedReferences(value) {
+    // Reference numbers have at least four leading digits; keep full AP/Patek suffixes.
+    const matches = String(value).toUpperCase().match(/\b\d{4,6}[A-Z]*(?:\s*[./-]\s*[A-Z0-9]+)*(?:\s+(?:BLRO|BLNR|LN|LV|ST|SO|OR)\b)?\b/g) || [];
+    return [...new Set(matches.map((match) => match.replace(/[^A-Z0-9]/g, "")))]
+      .filter((ref) => !/^\d{4}$/.test(ref) || Number(ref) < 1900 || Number(ref) > 2099);
+  }
+
+  function lookupReferences(question, previous) {
+    const refs = requestedReferences(question);
+    if (!refs.length) return [];
+    let intent = purchaseIntent(question);
+    if (intent === null) {
+      for (const message of [...previous].reverse()) {
+        if (message.role !== "user") continue;
+        intent = purchaseIntent(message.content);
+        if (intent !== null) break;
+      }
+    }
+    return intent === false ? [] : refs;
+  }
+
+  function priceLabel(value) {
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 1
+      ? `~${(Math.floor(amount) * 1000000).toLocaleString("vi-VN")}đ`
+      : "cần liên hệ báo giá";
+  }
+
+  async function lookupPurchase(refs, config) {
+    if (!config?.url || !config?.publishableKey) throw new Error("Catalog unavailable");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const answers = [];
+      for (const ref of refs.slice(0, 3)) {
+        const url = new URL(`${config.url}/rest/v1/purchase_catalog_variants`);
+        url.searchParams.set("select", "reference,brand,family,model,variant_label,bracelet,dial,new_price_million_vnd,used_price_million_vnd");
+        // Query a narrow numeric prefix, then match normalized references exactly.
+        url.searchParams.set("reference", `ilike.${ref.match(/^\d+/)[0]}*`);
+        url.searchParams.set("order", "reference,display_order,variant_id");
+        url.searchParams.set("limit", "101");
+        const response = await fetch(url, {
+          headers: { apikey: config.publishableKey }, signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Catalog request failed");
+        const rows = await response.json();
+        if (!Array.isArray(rows)) throw new Error("Invalid catalog response");
+        const exact = rows.filter((row) => String(row.reference).toUpperCase().replace(/[^A-Z0-9]/g, "") === ref);
+        const matches = exact.length ? exact : rows.filter((row) => String(row.reference).toUpperCase().replace(/[^A-Z0-9]/g, "").startsWith(ref));
+        if (!matches.length) {
+          answers.push(rows.length === 101
+            ? `Mã ${ref}: có quá nhiều phiên bản để xác định chính xác. Bạn vui lòng gửi mã đầy đủ và ảnh qua Facebook để LUXTIME kiểm tra.`
+            : `Chưa tìm thấy mã ${ref} trong bảng giá thu mua. Bạn vui lòng gửi mã và ảnh đồng hồ qua Facebook để LUXTIME kiểm tra, báo giá.`);
+          continue;
+        }
+        answers.push(`Giá thu mua dự kiến cho ${ref}:`);
+        for (const row of matches.slice(0, 5)) {
+          const name = [row.brand, row.family, row.model, row.reference, row.variant_label || row.bracelet || row.dial].filter(Boolean).join(" · ");
+          answers.push(`${name}: hàng mới ${priceLabel(row.new_price_million_vnd)}; đã sử dụng ${priceLabel(row.used_price_million_vnd)}.`);
+        }
+        if (matches.length > 5 || rows.length === 101) answers.push("Đây là một số phiên bản phù hợp. Gửi ảnh qua Facebook để xác định đúng phiên bản của bạn.");
+      }
+      if (refs.length > 3) answers.push("Mình tra tối đa 3 mã mỗi lượt; bạn gửi riêng các mã còn lại nhé.");
+      answers.push("Giá chốt cần kiểm tra tình trạng, hộp và giấy tờ thực tế. Bạn có thể nhắn Facebook để được hỗ trợ.");
+      return answers.join("\n\n");
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   // Keep this available for a small, network-free behavior check.
-  window.LUXTIME_CHAT_HELP = { knownAnswer };
+  window.LUXTIME_CHAT_HELP = { knownAnswer, lookupReferences, lookupPurchase };
 
   const root = document.createElement("aside");
   root.className = "lux-chat";
@@ -106,8 +188,26 @@
     if (!value || submit.disabled) return;
     appendMessage(value, "user");
     input.value = "";
-    // Suggested buttons are instant; free-form questions use the live catalog.
-    const matched = help.find((entry) => entry.label !== "Bán đồng hồ" && entry.label.toLowerCase() === value.toLowerCase());
+    // Reference lookups use the same public catalog as the website, without an AI guess.
+    const refs = lookupReferences(value, history);
+    if (refs.length) {
+      submit.disabled = true;
+      submit.textContent = "…";
+      let answer;
+      try {
+        answer = await lookupPurchase(refs, window.REWATCH_SUPABASE);
+      } catch {
+        answer = "Mình chưa đọc được bảng giá lúc này. Bạn vui lòng gửi mã và ảnh đồng hồ qua Facebook để LUXTIME kiểm tra, báo giá nhé.";
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Gửi";
+      }
+      appendMessage(answer, "bot", { text: "Nhắn Facebook", href: facebook, external: true });
+      history.push({ role: "user", content: value }, { role: "assistant", content: answer.slice(0, 500) });
+      input.focus();
+      return;
+    }
+    const matched = help.find((entry) => entry.label.toLowerCase() === value.toLowerCase());
     if (matched) {
       appendMessage(matched.answer, "bot", matched.link);
       history.push({ role: "user", content: value }, { role: "assistant", content: matched.answer });
