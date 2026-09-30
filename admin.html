@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="admin.css?v=20260927-price-review">
     <link rel="stylesheet" href="admin-accounts.css?v=20260927-invite">
+    <link rel="stylesheet" href="admin-chat.css?v=20260930-history">
     <link rel="stylesheet" href="news.css?v=20260925-news">
   </head>
 
@@ -28,6 +29,7 @@
 
       <nav>
         <a href="index.html">Xem website</a>
+        <a id="admin-chat-link" href="#admin-chat-section" hidden>Lịch sử chat</a>
       </nav>
     </header>
 
@@ -467,6 +469,15 @@
           <div id="news-admin-list" class="news-admin-list"></div>
         </section>
         <section class="admin-accounts-section" id="admin-accounts-section" aria-labelledby="admin-accounts-title" hidden>
+          <section id="admin-chat-section" aria-labelledby="admin-chat-title" hidden>
+            <div class="admin-section-heading"><h2 id="admin-chat-title">Lịch sử chat của khách</h2><button id="admin-chat-refresh" type="button">Tải lại hội thoại</button></div>
+            <p>Chat mới được lưu 30 ngày từ lúc bắt đầu. Mỗi tab là một hội thoại riêng; khách chưa đăng nhập được hiển thị ẩn danh. Ảnh gửi qua Facebook xem trong hộp thư Facebook.</p>
+            <p>Nội dung ghi nhận từ trình duyệt khách; giá và thông tin trong chat cần được kiểm tra trước khi giao dịch.</p>
+            <p id="admin-chat-status" role="status"></p>
+            <div id="admin-chat-list"></div>
+            <button id="admin-chat-more" type="button" hidden>Xem thêm hội thoại</button>
+            <div id="admin-chat-detail" aria-live="polite"></div>
+          </section>
           <div class="admin-section-heading">
             <div>
               <span class="kicker">KHÁCH HÀNG VÀ NHÂN VIÊN</span>
@@ -519,8 +530,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="admin.js?v=20260927-no-price-examples"></script>
+    <script src="admin.js?v=20260930-history"></script>
     <script src="news-admin.js?v=20260927-staff-edit"></script>
     <script src="admin-accounts.js?v=20260927-invite"></script>
+    <script src="admin-chat.js?v=20260930-history"></script>
   </body>
 </html>

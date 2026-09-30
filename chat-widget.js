@@ -25,6 +25,12 @@
       answer: "Bạn có thể nhắn trực tiếp cho LUXTIME qua Facebook. Zalo và Instagram sẽ được bổ sung đường dẫn sau.",
       link: { text: "Nhắn Facebook", href: facebook, external: true },
     },
+    {
+      label: "Gửi ảnh",
+      match: /gửi ảnh|gởi ảnh|gui anh|goi anh|gửi hình|gui hinh|xem ảnh|nhận diện ảnh|send photo|upload photo/i,
+      answer: "Bạn bấm bên dưới để mở Facebook của LUXTIME, chọn Nhắn tin rồi gửi ảnh mặt trước, mặt sau và giấy tờ đồng hồ (che thông tin cá nhân). Nhân viên sẽ hỗ trợ xác định mã và tư vấn giá. Ảnh được gửi qua Facebook, không tải vào chatbot này.",
+      link: { text: "Gửi ảnh qua Facebook", href: facebook, external: true },
+    },
   ];
 
   function knownAnswer(input) {
@@ -127,6 +133,8 @@
       <header class="lux-chat-header"><div><strong>LUXTIME</strong><small>Trợ lý tự động</small></div><button class="lux-chat-close" type="button" aria-label="Đóng chat">×</button></header>
       <div class="lux-chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
       <div class="lux-chat-suggestions" aria-label="Câu hỏi thường gặp"></div>
+      <p class="lux-chat-notice">Tin nhắn được lưu tối đa 30 ngày để admin LUXTIME hỗ trợ. Không gửi mật khẩu hoặc thông tin thanh toán. Ảnh gửi qua Facebook được quản lý riêng trong hộp thư Facebook.</p>
+      <p id="lux-chat-save-status" class="lux-chat-notice" role="status"></p>
       <form class="lux-chat-form"><label class="lux-chat-sr" for="lux-chat-input">Câu hỏi của bạn</label><input id="lux-chat-input" maxlength="500" autocomplete="off" placeholder="Nhập câu hỏi..." required><button type="submit" aria-label="Gửi câu hỏi">Gửi</button></form>
     </section>`;
   document.body.append(root);
@@ -142,6 +150,7 @@
   const history = [];
 
   function appendMessage(text, sender, link) {
+    window.luxtimeSaveChat?.(text, sender, link);
     const bubble = document.createElement("div");
     bubble.className = `lux-chat-message lux-chat-message-${sender}`;
     const paragraph = document.createElement("p");
@@ -207,7 +216,8 @@
       input.focus();
       return;
     }
-    const matched = help.find((entry) => entry.label.toLowerCase() === value.toLowerCase());
+    const matched = help.find((entry) => entry.label.toLowerCase() === value.toLowerCase()) ||
+      help.find((entry) => entry.label === "Gửi ảnh" && entry.match.test(value));
     if (matched) {
       appendMessage(matched.answer, "bot", matched.link);
       history.push({ role: "user", content: value }, { role: "assistant", content: matched.answer });
