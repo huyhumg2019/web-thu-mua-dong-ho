@@ -223,6 +223,7 @@ async function showDashboard(session) {
   await window.loadNewsAdmin?.();
   if (profile.role === "admin") {
     await window.loadAdminAccounts?.();
+    await window.loadAdminChats?.();
   }
 }
 
@@ -2269,6 +2270,7 @@ document
 
     currentProfile = null;
     window.clearAdminAccounts?.();
+    window.clearAdminChats?.();
     priceRows = [];
     productRows = [];
 
