@@ -21,6 +21,7 @@ const SPECIAL_TARGETS = [
   {
     reference: "126500LN-W",
     sourceReference: "126500LN",
+    nickname: "Panda",
     dialKeywords: ["ホワイト"],
     variantKey: "default",
     variantLabel: "Mặt trắng",
@@ -29,6 +30,7 @@ const SPECIAL_TARGETS = [
   {
     reference: "126500LN-B",
     sourceReference: "126500LN",
+    nickname: "Reverse Panda",
     dialKeywords: ["ブラック"],
     variantKey: "default",
     variantLabel: "Mặt đen",
